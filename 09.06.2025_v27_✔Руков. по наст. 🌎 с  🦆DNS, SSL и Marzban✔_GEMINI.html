@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" /> <!-- Кодировка документа -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <!-- Адаптивность для мобильных устройств -->
+  <title>Руководство по настройке сервера с DuckDNS, SSL и Marzban</title> <!-- Обновленный заголовок страницы -->
+  <style>
+    /* Определяем CSS-переменные для упрощения управления стилями (без переменных для темной темы) */
+    :root {
+      --font-family: 'Segoe UI', Arial, sans-serif; /* Основной шрифт */
+      --bg-color: #f9f9f9; /* Цвет фона страницы */
+      --text-color: #222; /* Основной цвет текста */
+      --accent-color: #0066cc; /* Цвет заголовков и кнопок */
+      --note-bg: #e7f3ff; /* Фон примечания 1 (.note) */
+      --note-border: #3399ff; /* Рамка примечания 1 (.note) */
+      --two-note-bg: #F5F5DC; /* Фон примечания 2 (.two-note - бежевый) */
+      --two-note-border: #DAA520; /* Рамка примечания 2 (.two-note - золотистый) */
+      --three-note-bg: #fff3e0; /* Фон примечания 3 (.three-note - светло-оранжевый) */
+      --three-note-border: #ffb74d; /* Рамка примечания 3 (.three-note - оранжевый) */
+      --code-bg: #f8f9fa; /* Фон кода */
+      --goal-color: #cc3300; /* Цвет для выделения фраз после "Цель:" и рамки .develop-summary */
+      --radius: 8px; /* Скругленные углы */
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.12); /* Усиленная тень для выпуклого эффекта */
+      --section-spacing: 30px; /* Отступы между секциями */
+      --surface-bg: white; /* Фон для nav, section, label */
+      --inline-code-bg: #eaeaea; /* Фон для инлайн кода */
+      --inline-code-text: #222; /* Цвет текста для инлайн кода */
+      --pre-border: #ddd; /* Рамка для pre */
+      --button-text-color: white; /* Цвет текста кнопок */
+    }
+
+    /* Базовые стили для тела документа */
+    body {
+      font-family: var(--font-family); /* Применяем основной шрифт */
+      background-color: var(--bg-color); /* Цвет фона страницы */
+      color: var(--text-color); /* Цвет текста */
+      max-width: 1200px; /* Ограничение максимальной ширины */
+      margin: 0 auto; /* Горизонтальное центрирование */
+      padding: 0.5rem; /* Внутренние отступы */
+      line-height: 1.6; /* Межстрочный интервал */
+      overflow-x: hidden; /* Предотвращает горизонтальную прокрутку */
+      overflow-wrap: break-word; /* Перенос слов для длинных слов */
+    }
+
+    /* Общий класс для блоков с фоном, скругленными углами и тенью */
+    .card {
+      background: var(--surface-bg); /* Цвет фона */
+      border-radius: var(--radius); /* Скругленные углы */
+      box-shadow: var(--shadow); /* Добавляем тень */
+      /* Рамка теперь управляется напрямую через details для консистентности */
+    }
+
+    /* Стили заголовков */
+    h1, h2, h3 {
+      color: var(--accent-color); /* Цвет заголовков */
+      margin-top: 5px; /* Верхний отступ */
+    }
+
+    /* Стили для h2 */
+    h2 {
+      font-size: 1.7em; /* Единый размер шрифта для h2 на десктопе */
+    }
+
+    /* Стили для ссылок в h2 (для совместимости, но без активной навигации в упрощенной версии) */
+    h2 a {
+      text-decoration: none; /* Убираем подчеркивание */
+      color: inherit; /* Наследует цвет от h2 */
+      cursor: default; /* Курсор по умолчанию, так как ссылка неактивна */
+    }
+    h2 a:hover {
+      opacity: 1; /* Нет эффекта наведения, так как нет ссылки */
+    }
+
+    /* Стили для пояснительного текста в заголовке H2 */
+    .return-to-toc-instruction {
+      font-size: 0.7em; /* Меньший размер шрифта */
+      display: block; /* Отображение на новой строке */
+      font-weight: normal; /* Нормальный вес шрифта */
+      margin-top: 0; /* Без верхнего отступа */
+      opacity: 0.7; /* Уменьшенная прозрачность */
+      color: inherit; /* Наследует цвет от родителя */
+    }
+
+    /* Стили секций контента */
+    .section {
+      padding: 4px; /* Внутренние отступы */
+      margin-bottom: var(--section-spacing); /* Нижний отступ */
+    }
+
+    /* Стили примечаний */
+    .note, .two-note, .three-note {
+      padding: 15px; /* Внутренние отступы */
+      border-radius: 4px; /* Скругленные углы */
+      margin-top: 20px; /* Верхний отступ */
+      overflow-wrap: break-word; /* Перенос слов */
+    }
+
+    .note {
+      background-color: var(--note-bg); /* Цвет фона */
+      border-left: 4px solid var(--note-border); /* Левая граница */
+    }
+
+    .two-note {
+      background-color: var(--two-note-bg); /* Цвет фона */
+      border-left: 4px solid var(--two-note-border); /* Левая граница */
+    }
+
+    .three-note {
+      background-color: var(--three-note-bg); /* Цвет фона */
+      border-left: 4px solid var(--three-note-border); /* Левая граница */
+    }
+    .three-note strong {
+      font-weight: bold; /* Жирный текст */
+    }
+
+    /* Стили блоков кода */
+    .code-block {
+      margin-top: 5px; /* Верхний отступ */
+      margin-bottom: 2px; /* Уменьшенный нижний отступ */
+      display: flex; /* Используем flexbox для размещения кода и кнопки в одной строке */
+      align-items: flex-start; /* Выравнивание элементов по верху */
+      gap: 20px; /* Отступ между блоком кода и кнопкой */
+    }
+
+    pre {
+      background-color: var(--code-bg); /* Цвет фона */
+      padding: 10px; /* Внутренние отступы */
+      border-radius: 6px; /* Скругленные углы */
+      border: 1px solid var(--pre-border); /* Граница */
+      white-space: pre-wrap; /* Перенос текста */
+      overflow-x: auto; /* Горизонтальная прокрутка */
+      margin: 0; /* Удаляем внешние отступы */
+      font-family: "Courier New", monospace; /* Моноширинный шрифт */
+      color: var(--inline-code-text); /* Цвет текста для pre */
+      
+      flex-grow: 1; /* Разрешаем блоку pre занимать все доступное пространство */
+      max-width: calc(100% - 110px); /* Ограничиваем ширину pre, оставляя место для кнопки + gap */
+      word-wrap: break-word; /* Перенос длинных слов */
+      overflow-wrap: break-word; /* Для лучшей совместимости */
+    }
+
+    /* НОВЫЙ СТИЛЬ: для конкретного длинного bash-скрипта */
+    .bash-script-code pre {
+      max-height: 180px; /* Фиксированная высота для прокрутки, примерно в 7 раз меньше */
+      overflow-y: auto; /* Вертикальная прокрутка */
+    }
+
+    code {
+      background: var(--inline-code-bg); /* Фон */
+      color: var(--inline-code-text); /* Цвет текста */
+      padding: 3px 5px; /* Внутренние отступы */
+      border-radius: 4px; /* Скругленные углы */
+      word-break: break-all; /* Разрыв слов */
+    }
+
+    /* Стили кнопки копирования */
+    .copy-button {
+      padding: 4px 12px; /* Внутренние отступы */
+      background: var(--accent-color); /* Цвет фона */
+      color: var(--button-text-color); /* Цвет текста */
+      border: none; /* Убираем границу */
+      cursor: pointer; /* Курсор-указатель */
+      border-radius: 4px; /* Скругленные углы */
+      font-family: var(--font-family); /* Основной шрифт */
+      font-size: 14px; /* Размер шрифта */
+      transition: background-color 0.3s, opacity 0.2s; /* Плавный переход для фона и прозрачности */
+      z-index: 10; /* Приоритет отображения */
+      flex-shrink: 0; /* Запрещаем кнопке сжиматься */
+      width: 110px; /* Фиксированная ширина кнопки */
+    }
+
+    .copy-button:hover {
+      opacity: 0.85; /* Уменьшаем прозрачность при наведении */
+    }
+
+    /* Стили для параграфов с целью */
+    strong:has(~ em.goal) {
+      display: inline-block; /* Инлайн-блочный элемент */
+      margin-right: 5px; /* Правый отступ */
+    }
+
+    em.goal {
+      color: var(--goal-color); /* Цвет текста */
+      font-style: italic; /* Курсив */
+    }
+
+    .goal-section {
+      margin-top: 0; /* Удаляем верхний отступ */
+      margin-bottom: 0; /* Удаляем нижний отступ */
+    }
+
+    /* Стили чекбосов */
+    label {
+      display: block; /* Блочный элемент */
+      margin-bottom: 10px; /* Нижний отступ */
+      padding: 8px; /* Внутренние отступы */
+      cursor: pointer; /* Курсор-указатель */
+      overflow-wrap: break-word; /* Перенос слов */
+    }
+    label:hover {
+      opacity: 0.9; /* Уменьшаем прозрачность при наведении */
+    }
+    input[type="checkbox"] {
+      margin-right: 10px; /* Правый отступ */
+      transform: scale(1.2); /* Масштабирование чекбокса */
+    }
+
+    /* === ИЗМЕНЕННЫЕ СТИЛИ ДЛЯ СВОРАЧИВАЕМЫХ БЛОКОВ === */
+    details {
+      margin-bottom: var(--section-spacing); /* Нижний отступ */
+      padding: 0 10px 10px 10px; /* Внутренние отступы */
+      background: var(--surface-bg); /* Цвет фона */
+      border-radius: var(--radius); /* Скругленные углы */
+      box-shadow: var(--shadow); /* Тень */
+      border: 1px solid var(--accent-color); /* Тонкая синяя рамка для всех details */
+      transition: max-height 0.3s ease; /* Плавное раскрытие */
+      overflow: hidden; /* Скрывает контент при свертывании */
+    }
+    details[open] {
+      max-height: none; /* теперь динамически расширяется */
+    }
+	
+    details:not([open]) {
+      max-height: 48px; /* Увеличена высота в свернутом состоянии для лучшего вертикального центрирования */
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: normal;
+      color: var(--accent-color);
+      padding: 10px 8px; /* Изменен padding */
+      border-radius: 4px;
+      outline: none;
+      display: flex;
+      align-items: center;
+      font-size: 1.2em;
+      height: 100%;
+      position: relative;
+      transition: color 0.3s ease; /* Плавный переход цвета текста */
+    }
+    
+    /* Удаляем псевдоэлемент с треугольником */
+    summary::before {
+        content: none;
+    }
+
+    /* Применяем вишневый цвет к тексту заголовка при раскрытии блока */
+    details[open] > summary {
+        color: #800000; /* Вишневый цвет */
+    }
+
+    summary:hover {
+      background: var(--inline-code-bg); /* Фон при наведении */
+    }
+    /* === КОНЕЦ ИЗМЕНЕННЫХ СТИЛЕЙ === */
+
+    /* Стили для заголовков разделов в разработке */
+    .develop-summary {
+      border: 1px dashed var(--goal-color); /* Красная пунктирная граница */
+      opacity: 0.8; /* Прозрачность границы */
+    }
+
+    /* Стили для блока ввода переменных */
+    details#section-variables > .section { 
+        padding: 15px;
+        margin-bottom: 0; 
+        margin-top: 30px; 
+        margin-bottom: 30px;
+        margin-left: 30px; 
+        margin-right: 30px; 
+        border: 1px solid var(--note-border); 
+        background-color: var(--note-bg); 
+        border-radius: var(--radius); 
+        box-shadow: none; 
+    }
+    details#section-variables h3 {
+        margin-top: 0;
+        color: var(--accent-color);
+    }
+
+    /* Контейнер для двухколоночного расположения */
+    #variable-input-block .two-column-inputs {
+        display: grid;
+        grid-template-columns: 1fr; /* По умолчанию одна колонка на маленьких экранах */
+        gap: 15px; /* Отступы между элементами сетки */
+        margin-bottom: 15px;
+    }
+
+    /* Добавлены стили для поля с генератором пароля */
+    #variable-input-block .password-generator-group,
+    #variable-input-block .username-generator-group { 
+        display: flex;
+        align-items: flex-end; 
+        gap: 10px; 
+    }
+
+    #variable-input-block .password-generator-group input[type="text"],
+    #variable-input-block .password-generator-group input[type="password"],
+    #variable-input-block .username-generator-group input[type="text"] {
+        flex-grow: 1; /* Поле ввода займет все доступное пространство */
+    }
+
+    #variable-input-block .password-generator-group button,
+    #variable-input-block .username-generator-group button { 
+        padding: 8px 15px;
+        background: var(--accent-color);
+        color: var(--button-text-color);
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 1em;
+        transition: background-color 0.3s, opacity 0.2s;
+        white-space: nowrap; 
+    }
+    #variable-input-block .password-generator-group button:hover,
+    #variable-input-block .username-generator-group button:hover { 
+        opacity: 0.85;
+    }
+
+    /* Медиазапрос для двух колонок на средних и больших экранах */
+    @media (min-width: 768px) {
+        #variable-input-block .two-column-inputs {
+            grid-template-columns: 1fr 1fr; /* Две равные колонки */
+        }
+        #variable-input-block .password-generator-group,
+        #variable-input-block .username-generator-group { 
+            flex-direction: row; 
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+
+
+    #variable-input-block .input-group {
+        display: flex; 
+        flex-direction: column; 
+        align-items: flex-start; 
+        margin-bottom: 0;
+        padding: 0; 
+        background: none; 
+        box-shadow: none; 
+    }
+
+    #variable-input-block .input-group label {
+        width: 100%; 
+        margin-right: 0;
+        margin-bottom: 5px; 
+        padding: 0;
+        background: none;
+        box-shadow: none; 
+        cursor: default;
+    }
+    #variable-input-block .input-group label:hover {
+        opacity: 1; 
+    }
+
+    #variable-input-block .input-group input[type="text"],
+    #variable-input-block .input-group input[type="password"] {
+        width: 100%; 
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1em;
+        box-sizing: border-box;
+    }
+    
+    #variable-input-block .button-group {
+        margin-top: 15px;
+        text-align: right;
+        grid-column: 1 / -1; 
+    }
+    #variable-input-block .button-group button {
+        padding: 8px 15px;
+        margin-left: 10px;
+        background: var(--accent-color);
+        color: var(--button-text-color);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.3s, opacity 0.2s;
+    }
+    #variable-input-block .button-group button:hover {
+        opacity: 0.85;
+    }
+
+
+    /* Медиазапросы для адаптивности */
+    @media (max-width: 767px) { 
+      #variable-input-block .two-column-inputs {
+          grid-template-columns: 1fr; 
+          gap: 10px; 
+      }
+      #variable-input-block .input-group,
+      #variable-input-block .password-generator-group, 
+      #variable-input-block .username-generator-group {
+          margin-bottom: 0; 
+          flex-direction: column; 
+          align-items: flex-start;
+      }
+      #variable-input-block .password-generator-group button,
+      #variable-input-block .username-generator-group button {
+          width: 100%;
+      }
+      #variable-input-block .button-group {
+          text-align: center;
+      }
+      #variable-input-block .button-group button {
+          margin-left: 5px;
+          margin-right: 5px;
+          margin-bottom: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h2 { font-size: 1.3em; } 
+      summary { font-size: 1.3em; } 
+      h1 { font-size: 1.5em; }
+      body { padding: 0.5rem; }
+      .section { padding: 0.625rem; }
+      label { font-size: 0.95em; padding: 0.625rem; }
+      input[type="checkbox"] { transform: scale(1.1); }
+    }
+
+    /* Стили для простого списка содержания */
+    .toc ul {
+        list-style: none; /* Убираем стандартные маркеры списка */
+        padding: 0;
+        margin: 0;
+    }
+
+    .toc li {
+        margin-bottom: 8px; /* Отступ между элементами списка */
+        padding-left: 20px; /* Отступ для маркера */
+        position: relative;
+        font-weight: normal; /* Обычный вес шрифта */
+        color: var(--text-color); /* Цвет текста */
+    }
+
+    .toc li::before {
+        content: '◇'; /* Пустой ромб (Diamond Hollow) */
+        position: absolute;
+        left: 0;
+        color: var(--accent-color); /* Цвет маркера */
+        font-size: 0.9em; /* Размер маркера */
+    }
+
+    .main-title {
+      text-align: center;
+    }
+
+    /* Обновленные стили для сворачиваемого содержания, чтобы оно соответствовало другим блокам */
+    .toc.card {
+      padding: 0;
+      box-shadow: none;
+      margin-bottom: var(--section-spacing);
+    }
+
+    .toc details {
+      margin-bottom: 0; 
+    }
+
+    .toc summary {
+      padding: 10px 8px; 
+      background-color: transparent; 
+      box-shadow: none; 
+      border-radius: 4px; 
+    }
+
+    .toc h2 {
+      display: inline;
+      margin: 0;
+      color: inherit; 
+      font-size: 1.1em;
+    }
+
+    .toc ul {
+      padding: 10px 10px 10px 30px; 
+      background: transparent; 
+      box-shadow: none;
+      margin-top: 5px;
+    }
+  </style>
+  <script>
+    // Функция для копирования кода в буфер обмена
+    function copyCode(button) {
+      const preElement = button.closest('.code-block').querySelector('pre');
+      if (preElement) {
+        const textToCopy = preElement.innerText;
+        // Всегда используем document.execCommand('copy') из-за ограничений iframe
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        let successful = false;
+        try {
+          successful = document.execCommand('copy');
+          handleButtonClickFeedback(button, "Копировать", "Скопировано!", "Ошибка!");
+        } catch (err) {
+          console.error('Error copying: ', err);
+          handleButtonClickFeedback(button, "Копировать", "Скопировано!", "Ошибка!", false); // Передаем false для ошибки
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+    }
+
+    // Универсальная функция для отображения обратной связи кнопки
+    function handleButtonClickFeedback(button, originalText, successText, errorText, isSuccess = true) {
+        const initialButtonText = button.innerText; // Сохраняем исходный текст кнопки
+        button.innerText = isSuccess ? successText : errorText;
+        let successful = isSuccess; // Переменная для управления таймаутом
+
+        setTimeout(() => {
+            button.innerText = originalText;
+        }, successful ? 1500 : 2000); // Разное время для успеха и ошибки
+    }
+
+
+    // --- Переменные и функции для динамической замены плейсхолдеров ---
+
+    // Карта соответствия ID поля ввода и строки-плейсхолдера
+    const PLACEHOLDER_MAP = {
+        'ipAddressInput': 'ВАШ_IP_АДРЕС_СЕРВЕРА',
+        'hostNameInput': 'ВАШ_ХОСТНЕЙМ',
+        'rootPasswordInput': 'ВАШ_root_ПАРОЛЬ',
+        'localPrivateKeyInput': 'ВАШ_ЛОКАЛЬНЫЙ_ЗАКРЫТЫЙ_КЛЮЧ', // Новое поле
+        'localPublicKeyInput': 'ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ', // Новое поле
+        'tokenInput': 'ВАШ_ТОКЕН',
+        'subdomainInput': 'ВАШ_СУБДОМЕН.duckdns.org',
+        'emailInput': 'ВАШ_EMAIL@example.com',
+        'privateKeyInput': 'ВАШ_PRIVATE_KEY',
+        'shortIdsInput': 'ВАШ_SHORT_IDS',
+        'marzbanAdminUsernameInput': 'ИМЯ_АДМИНА_MARZBAN', 
+        'marzbanAdminPasswordInput': 'ПАРОЛЬ_АДМИНА_MARZBAN' 
+    };
+
+    // Массив плейсхолдеров, отсортированный по убыванию длины, для корректной замены (чтобы более длинные плейсхолдеры заменялись первыми)
+    const PLACEHOLDERS_TO_REPLACE = Object.values(PLACEHOLDER_MAP)
+        .sort((a, b) => b.length - a.length);
+
+    // Хранилище оригинального содержимого кодовых блоков
+    const originalCodeContents = new Map(); // Key: DOM element, Value: original innerHTML
+
+    // Вспомогательная функция для экранирования символов регулярных выражений
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Функция для применения введенных переменных
+    function applyVariables() {
+        const applyButton = document.getElementById('applyVariablesBtn');
+        try {
+            // 1. Сохраняем текущие значения полей ввода в localStorage
+            const currentValues = {};
+            for (const inputId in PLACEHOLDER_MAP) {
+                const inputElement = document.getElementById(inputId);
+                if (inputElement) {
+                    currentValues[inputId] = inputElement.value;
+                    localStorage.setItem(`variable_${inputId}`, inputElement.value);
+                }
+            }
+
+            // 2. Применяем замены к содержимому всех кодовых блоков
+            document.querySelectorAll('pre, code').forEach(element => {
+                // Берем оригинальное содержимое, чтобы избежать многократных замен на уже замененный текст
+                let content = originalCodeContents.get(element);
+
+                // Если оригинальное содержимое не найдено (например, элемент добавлен динамически после инициализации),
+                // используем текущее и сохраняем его как оригинал для будущих операций.
+                if (!content) {
+                    content = element.innerHTML;
+                    originalCodeContents.set(element, content);
+                }
+
+                PLACEHOLDERS_TO_REPLACE.forEach(placeholder => {
+                    // Находим ID поля ввода, соответствующий текущему плейсхолдеру
+                    const inputId = Object.keys(PLACEHOLDER_MAP).find(key => PLACEHOLDER_MAP[key] === placeholder);
+                    // Получаем новое значение из поля ввода или оставляем плейсхолдер, если поле пустое
+                    const newValue = currentValues[inputId] || PLACEHOLDER_MAP[inputId];
+
+                    // Заменяем только если новое значение отличается от плейсхолдера
+                    if (newValue !== placeholder) {
+                        const regex = new RegExp(escapeRegExp(placeholder), 'g');
+                        content = content.replace(regex, newValue);
+                    }
+                });
+                element.innerHTML = content; // Обновляем содержимое элемента
+            });
+            handleButtonClickFeedback(applyButton, "Применить", "Применено!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error applying variables:", error);
+            handleButtonClickFeedback(applyButton, "Применить", "Применено!", "Ошибка!", false);
+        }
+    }
+
+    // Функция для очистки полей ввода и восстановления оригинальных плейсхолдеров
+    function clearVariables() {
+        const clearButton = document.getElementById('clearVariablesBtn');
+        try {
+            // 1. Очищаем поля ввода и localStorage
+            for (const inputId in PLACEHOLDER_MAP) {
+                const inputElement = document.getElementById(inputId);
+                if (inputElement) {
+                    inputElement.value = '';
+                }
+                localStorage.removeItem(`variable_${inputId}`);
+            }
+
+            // 2. Восстанавливаем оригинальное содержимое кодовых блоков
+            document.querySelectorAll('pre, code').forEach(element => {
+                element.innerHTML = originalCodeContents.get(element);
+            });
+            handleButtonClickFeedback(clearButton, "Очистить", "Очищено!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error clearing variables:", error);
+            handleButtonClickFeedback(clearButton, "Очистить", "Очищено!", "Ошибка!", false);
+        }
+    }
+
+    // Функция для генерации пароля
+    function generatePassword() {
+        const generatePasswordBtn = document.getElementById('generatePasswordBtn');
+        try {
+            const length = 16; // Длина пароля
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+            let password = "";
+            for (let i = 0, n = charset.length; i < length; ++i) {
+                password += charset.charAt(Math.floor(Math.random() * n));
+            }
+            document.getElementById("marzbanAdminPasswordInput").value = password; // Цель - новое поле для пароля Marzban
+            handleButtonClickFeedback(generatePasswordBtn, "Сгенерировать", "Сгенерировано!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error generating password:", error);
+            handleButtonClickFeedback(generatePasswordBtn, "Сгенерировать", "Сгенерировано!", "Ошибка!", false);
+        }
+    }
+
+    // Функция для генерации имени пользователя
+    function generateUsername() {
+        const generateUsernameBtn = document.getElementById('generateUsernameBtn');
+        try {
+            const adjectives = ["quick", "brave", "clever", "silent", "agile", "swift", "wise", "bold", "calm", "vivid"];
+            const nouns = ["fox", "eagle", "ghost", "shadow", "blaze", "stone", "river", "peak", "echo", "spirit"];
+            const num = Math.floor(Math.random() * 900) + 100; // 100-999
+
+            const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+
+            const username = `${randomAdjective}${randomNoun}${num}`;
+            document.getElementById("marzbanAdminUsernameInput").value = username; // Цель - новое поле для имени пользователя Marzban
+            handleButtonClickFeedback(generateUsernameBtn, "Сгенерировать", "Сгенерировано!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error generating username:", error);
+            handleButtonClickFeedback(generateUsernameBtn, "Сгенерировать", "Сгенерировано!", "Ошибка!", false);
+        }
+    }
+
+
+    // При загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+      // Инициализация кнопок управления переменными
+      const applyButton = document.getElementById('applyVariablesBtn');
+      const clearButton = document.getElementById('clearVariablesBtn');
+      const generatePasswordBtn = document.getElementById('generatePasswordBtn');
+      const generateUsernameBtn = document.getElementById('generateUsernameBtn'); 
+
+      if (applyButton) applyButton.addEventListener('click', applyVariables);
+      if (clearButton) clearButton.addEventListener('click', clearVariables);
+      if (generatePasswordBtn) generatePasswordBtn.addEventListener('click', generatePassword);
+      if (generateUsernameBtn) generateUsernameBtn.addEventListener('click', generateUsername); 
+
+      // Запоминаем оригинальное содержимое всех блоков кода при первой загрузке
+      document.querySelectorAll('pre, code').forEach(element => {
+          originalCodeContents.set(element, element.innerHTML);
+      });
+
+      // Загружаем сохраненные значения из localStorage и заполняем поля ввода
+      for (const inputId in PLACEHOLDER_MAP) {
+          const inputElement = document.getElementById(inputId);
+          if (inputElement) {
+              const savedValue = localStorage.getItem(`variable_${inputId}`);
+              if (savedValue) {
+                  inputElement.value = savedValue;
+              }
+          }
+      }
+
+      // Применяем переменные при первой загрузке (если есть сохраненные)
+      applyVariables();
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2 class="main-title">Руководство по настройке сервера с DuckDNS, SSL и Marzban</h2> 
+
+    <!-- ========== TABLE OF CONTENTS (Оглавление) ========== -->
+    <div class="toc card">
+      <details> 
+        <summary>Содержание</summary>
+        <ul>
+          <li>Настройка данных для плейсхолдеров</li>
+          <li>0. Полезные команды Powershell и Linux</li>
+          <li>1. Обновление системы
+            <ul>
+              <li>1.1. Создание пары ключей формата Ed25519 на локальном компьютере</li>
+              <li>1.2. Подключение к серверу и возможные сообщения при подключении</li>
+              <li>1.3. Переименование сервера для улучшения читаемости и управляемости</li>
+              <li>1.4. Создание и сохранение скрипта обновления системы</li>
+            </ul>
+          </li>
+          <li>2. Настройка DuckDNS
+            <ul>
+              <li>2.1. Зарегистрируйтесь на <a href="https://www.duckdns.org/" target="_blank">duckdns.org</a>:</li>
+              <li>2.2. Настройте обновление IP</li>
+              <li>2.3. Проверьте DuckDNS</li>
+            </ul>
+          </li>
+          <li>3. Установка SSL-сертификата с помощью Acme.sh
+            <ul>
+              <li>3.1. Подготовка системы и установка Acme.sh</li>
+              <li>3.2. Получение SSL-сертификата</li>
+            </ul>
+          </li>
+          <li>4. Установка приложений Marzban
+            <ul>
+              <li>4.1. Установите Marzban</li>
+              <li>4.2. Подключение SSL сертификата</li>
+              <li>4.3. Завершение настройки сервера</li>
+              <li>4.4. Настройка подключений</li>
+            </ul>
+          </li>
+        </ul>
+      </details>
+    </div>
+    <!-- ========== TABLE OF CONTENTS END ========== -->
+
+    <!-- Блок для ввода переменных -->
+    <details class="card" id="section-variables"> 
+      <summary>Настройка данных для плейсхолдеров</summary> 
+      <div class="section" id="variable-input-block">
+        <p>
+          В этом блоке вы можете ввести свои персональные данные (такие как IP-адрес сервера, субдомен, токены и ключи),
+          которые будут автоматически подставлены во все соответствующие места в инструкции.
+          Это значительно упростит использование команд, исключив необходимость ручного ввода в каждом шаге.
+          После ввода нажмите "Применить", чтобы значения обновились во всей инструкции.
+          Данные сохраняются локально в вашем браузере, и их можно "Очистить" в любое время.
+        </p>
+        <div class="two-note">
+          <strong>Безопасность ваших данных:</strong>
+          Все введенные вами данные обрабатываются исключительно в вашем браузере
+          и <strong>не отправляются ни на какие сторонние серверы или в интернет</strong>.
+          Это гарантирует полную конфиденциальность и безопасность ваших личных данных.
+          Информация используется только для динамической замены плейсхолдеров в этой инструкции.
+        </div>
+
+        <div class="two-column-inputs">
+          <div class="input-group">
+            <label for="ipAddressInput">IP-адрес сервера:</label>
+            <input type="text" id="ipAddressInput" placeholder="Например: 45.152.86.23" />
+          </div>
+
+          <div class="input-group">
+            <label for="hostNameInput">Имя хоста сервера:</label>
+            <input type="text" id="hostNameInput" placeholder="Например: my-server-name" />
+          </div>
+
+          <div class="input-group">
+            <label for="rootPasswordInput">Root-пароль сервера:</label>
+            <input type="text" id="rootPasswordInput" placeholder="Введите root-пароль сервера" />
+          </div>
+          
+          <div class="input-group">
+            <label for="localPrivateKeyInput">Сгенерированный на локальном компьютере закрытый ключ:</label>
+            <input type="text" id="localPrivateKeyInput" placeholder="Ваш локальный закрытый ключ (id_ed25519)" />
+          </div>
+
+          <div class="input-group">
+            <label for="localPublicKeyInput">Сгенерированный на локальном компьютере открытый ключ:</label>
+            <input type="text" id="localPublicKeyInput" placeholder="Ваш локальный открытый ключ (id_ed25519.pub)" />
+          </div>
+
+          <div class="input-group">
+            <label for="subdomainInput">Subdomain (DuckDNS):</label>
+            <input type="text" id="subdomainInput" placeholder="Например: my-awesome-server.duckdns.org" />
+          </div>
+
+          <div class="input-group">
+            <label for="emailInput">Email для Acme.sh:</label>
+            <input type="text" id="emailInput" placeholder="Например: your.email@example.com" />
+          </div>
+
+          <div class="input-group">
+            <label for="shortIdsInput">Short Ids (OpenSSL rand):</label>
+            <input type="text" id="shortIdsInput" placeholder="Например: 06f**********595" />
+          </div>
+
+          <div class="input-group">
+            <label for="tokenInput">Token (DuckDNS):</label>
+            <input type="text" id="tokenInput" placeholder="Например: efcce2*****************************b39" />
+          </div>
+
+          <div class="input-group">
+            <label for="privateKeyInput">Private Key (Xray x25519):</label>
+            <input type="text" id="privateKeyInput" placeholder="Например: Sy****************************************Fj" />
+          </div>
+
+          <div class="input-group username-generator-group">
+            <label for="marzbanAdminUsernameInput">Имя пользователя Marzban:</label>
+            <input type="text" id="marzbanAdminUsernameInput" placeholder="Нажмите 'Сгенерировать' или введите свое" />
+            <button id="generateUsernameBtn">Сгенерировать</button>
+          </div>
+
+          <div class="input-group password-generator-group">
+            <label for="marzbanAdminPasswordInput">Пароль пользователя Marzban:</label>
+            <input type="text" id="marzbanAdminPasswordInput" placeholder="Нажмите 'Сгенерировать' или введите свой" />
+            <button id="generatePasswordBtn">Сгенерировать</button>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button id="applyVariablesBtn">Применить</button>
+          <button id="clearVariablesBtn">Очистить</button>
+        </div>
+      </div>
+    </details>
+    <!-- Конец блока ввода переменных -->
+
+    <details class="card" id="section0">
+      <summary>0. Полезные команды Powershell и Linux</summary>
+      <div class="section">
+
+        <p class="goal-section"><strong>Цель:</strong> <em class="goal">Представление полезных команд для быстрой справки, которые могут пригодиться в процессе работы.</em></p>
+
+        <label class="card">
+          <input type="checkbox" aria-label="Шаг 0.1: Очистите историю Powershell" />
+          <strong>Шаг 0.1: Очистите историю Powershell.</strong> Эта команда полностью очищает историю команд PowerShell, как в текущей сессии, так и файл истории, обеспечивая конфиденциальность.
+        </label>
+        <div class="code-block">
+          <pre><code class="language-powershell">Clear-History; Remove-Item "$env:USERPROFILE\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" -ErrorAction SilentlyContinue</code></pre>
+          <button class="copy-button" aria-label="Скопировать команду очистки истории Powershell" onclick="copyCode(this)">Копировать</button>
+        </div>
+        <div class="note">
+          <strong>Объяснение:</strong>
+          <ul>
+            <li><code>Clear-History</code> – удаляет все команды из истории <strong>текущей сессии</strong> PowerShell.</li>
+            <li><code>Remove-Item "$env:USERPROFILE\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" -ErrorAction SilentlyContinue</code> – удаляет файл с историей команд, чтобы они <strong>не сохранялись между перезапусками</strong> PowerShell. Параметр <code>-ErrorAction SilentlyContinue</code> предотвращает вывод ошибок, если файл уже удален или не существует.</li>
+          </ul>
+        </div>
+
+        <label class="card">
+          <input type="checkbox" aria-label="Шаг 0.2: Очистите историю SSH Linux" />
+          <strong>Шаг 0.2: Очистите историю SSH Linux.</strong> Эта команда очищает историю команд в терминале Linux и сохраняет изменения, что важно для безопасности, особенно при работе с конфиденциальной информацией.
+        </label>
+        <div class="code-block">
+          <pre><code class="language-bash">history -c && history -w</code></pre>
+          <button class="copy-button" aria-label="Скопировать команду history -c && history -w" onclick="copyCode(this)">Копировать</button>
+        </div>
+
+        <label class="card">
+          <input type="checkbox" aria-label="Шаг 0.3: Проверьте настройку HISTCONTROL" />
+          <strong>Шаг 0.3: Проверьте настройку <code>HISTCONTROL</code>.</strong> Убедитесь, что ваш терминал настроен на игнорирование команд с пробелом в начале, что полезно для предотвращения их сохранения в истории Bash.
+        </label>
+        <div class="code-block">
+          <pre><code class="language-bash">echo $HISTCONTROL</code></pre>
+          <button class="copy-button" aria-label="Скопировать команду проверки HISTCONTROL" onclick="copyCode(this)">Копировать</button>
+        </div>
+        <div class="note">
+          <strong>Объяснение:</strong> Если вывод содержит `ignorespace` или `ignoreboth`, то команда, начинающаяся с пробела, не будет сохраняться в истории Bash (<code>~/.bash_history</code>). Это полезно для команд, содержащих конфиденциальные данные, такие как пароли.
+        </div>
+      </div>
+    </details>
+    <details class="card" id="section1">
+      <summary>1. Обновление системы</summary>
+      <div class="section">
+
+        <p class="goal-section"><strong>Цель:</strong> <em class="goal">Установить последние версии пакетов для безопасности и стабильности.</em></p>
+        
+        <!-- ========== НОВЫЙ РАЗДЕЛ 1.1 ========== -->
+        <details class="card">
+          <summary>1.1. Создание пары ключей формата Ed25519 на локальном компьютере для аутентификации пользователей при подключении по протоколу SSH.</summary>
+          <div class="section">
+             <p class="goal-section"><strong>Цель:</strong> <em class="goal">Создать безопасную пару SSH-ключей для аутентификации на сервере без использования пароля, что значительно повышает безопасность.</em></p>
+
+            <details class="card">
+              <summary>1.1.1. Генерация пары ключей (открытый и закрытый) на локальном компьютере</summary>
+              <div class="section">
+                  <label class="card">
+                    <input type="checkbox" aria-label="Шаг 1.1.1.1: Запустите команду генерации ключа" />
+                    <strong>Шаг 1.1.1.1: Откройте терминал (PowerShell/CMD в Windows, Terminal в macOS/Linux) и выполните команду:</strong>
+                  </label>
+                  <div class="code-block">
+                    <pre><code class="language-bash">ssh-keygen -t ed25519 -C "your_email@example.com"</code></pre>
+                    <button class="copy-button" aria-label="Скопировать команду ssh-keygen" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                  <div class="note">
+                      <strong>Объяснение:</strong>
+                      <ul>
+                          <li><code>-t ed25519</code>: Указывает на использование современного и безопасного алгоритма Ed25519.</li>
+                          <li><code>-C "your_email@example.com"</code>: Добавляет комментарий к ключу (обычно email), что помогает идентифицировать его владельца. Замените на ваш реальный email.</li>
+                      </ul>
+                  </div>
+
+                  <p>В процессе генерации вам будет предложено:</p>
+                  <ol>
+                      <li><strong>Указать файл для сохранения ключа:</strong> Нажмите Enter, чтобы использовать путь по умолчанию (<code>~/.ssh/id_ed25519</code> для Linux/macOS или <code>C:\Users\ИМЯ_ПОЛЬЗОВАТЕЛЯ\.ssh\id_ed25519</code> для Windows).</li>
+                      <li><strong>Ввести парольную фразу (passphrase):</strong> Это дополнительный уровень защиты для вашего закрытого ключа. Если кто-то получит доступ к вашему ключу, ему все равно потребуется парольная фраза для его использования. Настоятельно рекомендуется установить надежную фразу.</li>
+                  </ol>
+                  <div class="two-note">
+                    <strong>Ожидаемый результат:</strong> В директории <code>.ssh</code> будут созданы два файла:
+                    <ul>
+                      <li><code>id_ed25519</code> — ваш <strong>закрытый (приватный) ключ</strong>. Держите его в секрете!</li>
+                      <li><code>id_ed25519.pub</code> — ваш <strong>открытый (публичный) ключ</strong>. Его можно безопасно передавать на серверы.</li>
+                    </ul>
+                    <p>Скопируйте содержимое этих файлов в соответствующие поля в блоке "Настройка данных для плейсхолдеров" выше.</p>
+                  </div>
+              </div>
+            </details>
+            
+            <details class="card">
+              <summary>1.1.2. Копирование открытого ключа на сервер</summary>
+              <div class="section">
+                  <p>Чтобы использовать ключ для входа на сервер, необходимо скопировать на него ваш <strong>открытый</strong> ключ.</p>
+                  <label class="card">
+                    <input type="checkbox" aria-label="Шаг 1.1.2.1: Используйте ssh-copy-id (рекомендуемый способ)" />
+                    <strong>Шаг 1.1.2.1: Используйте команду <code>ssh-copy-id</code> (для Linux/macOS и современных Windows):</strong>
+                  </label>
+                  <div class="code-block">
+                    <pre><code class="language-bash">ssh-copy-id root@ВАШ_IP_АДРЕС_СЕРВЕРА</code></pre>
+                    <button class="copy-button" aria-label="Скопировать команду ssh-copy-id" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                  <div class="note">
+                      <strong>Объяснение:</strong> Эта утилита автоматически находит ваш открытый ключ (<code>id_ed25519.pub</code>), подключается к серверу (потребуется ввести пароль от <code>root</code> в последний раз) и добавляет ключ в файл <code>~/.ssh/authorized_keys</code> на сервере.
+                  </div>
+
+                  <label class="card">
+                    <input type="checkbox" aria-label="Шаг 1.1.2.2: Ручное копирование ключа" />
+                    <strong>Шаг 1.1.2.2: Ручной способ (если <code>ssh-copy-id</code> недоступна):</strong>
+                  </label>
+                  <ol>
+                      <li>Скопируйте содержимое вашего открытого ключа. На вашем <strong>локальном</strong> компьютере выполните:
+                          <div class="code-block">
+                              <pre><code class="language-bash"># Для Windows (PowerShell)
+Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | Set-Clipboard
+
+# Для macOS/Linux
+cat ~/.ssh/id_ed25519.pub</code></pre>
+                              <button class="copy-button" aria-label="Скопировать команду cat" onclick="copyCode(this)">Копировать</button>
+                          </div>
+                      </li>
+                      <li>Подключитесь к серверу по SSH с использованием пароля и выполните следующую команду, вставив скопированный ключ вместо <code>ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ</code>:
+                          <div class="code-block">
+                              <pre><code class="language-bash">mkdir -p ~/.ssh && echo "ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys</code></pre>
+                              <button class="copy-button" aria-label="Скопировать команду добавления ключа" onclick="copyCode(this)">Копировать</button>
+                          </div>
+                      </li>
+                  </ol>
+                   <div class="two-note">
+                    <strong>Ожидаемый результат:</strong> После копирования ключа попробуйте снова подключиться к серверу (<code>ssh root@ВАШ_IP_АДРЕС_СЕРВЕРА</code>). Если вы установили парольную фразу, вас попросят ее ввести. Если нет — вы войдете на сервер без запроса пароля.
+                  </div>
+              </div>
+            </details>
+
+            <details class="card">
+              <summary>1.1.3. Перенос ключей на другие устройства (macOS и Windows)</summary>
+              <div class="section">
+                  <div class="three-note">
+                      <strong>Безопасность:</strong> Перенос <strong>закрытого</strong> ключа (<code>id_ed25519</code>) сопряжен с риском. Делайте это только по защищенным каналам (например, с помощью USB-накопителя или зашифрованного архива) и только в случае крайней необходимости.
+                  </div>
+                  <p><strong>Для macOS и Linux:</strong></p>
+                  <ol>
+                      <li>Скопируйте файлы <code>id_ed25519</code> и <code>id_ed25519.pub</code> на целевое устройство.</li>
+                      <li>Поместите их в директорию <code>~/.ssh/</code>.</li>
+                      <li>Установите правильные права доступа, чтобы система безопасности позволила их использовать:
+                          <div class="code-block">
+                              <pre><code class="language-bash">chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub</code></pre>
+                              <button class="copy-button" aria-label="Скопировать команды chmod" onclick="copyCode(this)">Копировать</button>
+                          </div>
+                      </li>
+                  </ol>
+                  <p><strong>Для Windows:</strong></p>
+                  <ol>
+                      <li>Современный OpenSSH клиент в Windows использует директорию <code>%USERPROFILE%\.ssh\</code> (например, <code>C:\Users\ИмяПользователя\.ssh\</code>).</li>
+                      <li>Просто скопируйте файлы <code>id_ed25519</code> и <code>id_ed25519.pub</code> в эту папку. Права доступа обычно устанавливаются корректно, но стоит убедиться, что доступ к файлу закрытого ключа есть только у вашего пользователя.</li>
+                      <li>Если вы используете клиент PuTTY, вам потребуется конвертировать ключ формата OpenSSH в формат PuTTY (.ppk) с помощью утилиты PuTTYgen.</li>
+                  </ol>
+              </div>
+            </details>
+          </div>
+        </details>
+        <!-- ========== КОНЕЦ НОВОГО РАЗДЕЛА 1.1 ========== -->
+
+
+        <details class="card">
+          <summary>1.2. Подключение к серверу и возможные сообщения при подключении</summary>
+          <div class="section">
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.2.1: Подключитесь к серверу" />
+              <strong>Шаг 1.2.1: Подключитесь к серверу как <code>root</code> (или пользователь с sudo правами).</strong> Подключение с правами <code>root</code> или пользователя с <code>sudo</code> необходимо для выполнения системных операций, требующих повышенных привилегий, таких как обновление пакетов.
+            </label>
+            <div class="code-block">
+              <pre><code class="language-bash">ssh root@ВАШ_IP_АДРЕС_СЕРВЕРА</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду SSH" onclick="copyCode(this)">Копировать</button>
+            </div>
+
+            <!-- НОВЫЙ БЛОК: ввод пароля -->
+            <div class="code-block">
+              <pre><code class="language-bash">ВАШ_root_ПАРОЛЬ</code></pre>
+              <button class="copy-button" aria-label="Скопировать root-пароль" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <div class="note">
+              <strong>Примечание:</strong> Если вы настроили вход по SSH-ключу (раздел 1.1), пароль не потребуется. В противном случае, введите ваш root-пароль. Пароль не будет отображаться при вводе.
+            </div>
+            <!-- КОНЕЦ НОВОГО БЛОКА -->
+
+            <div class="note">
+              <strong>Примечание:</strong> Замените <code>ВАШ_IP_АДРЕС_СЕРВЕРА</code> на реальный IP-адрес вашего сервера.
+            </div>
+            <p>При первом подключении ваш SSH-клиент может запросить подтверждение подлинности хоста. Это стандартная процедура, которая помогает убедиться, что вы подключаетесь к правильному серверу:</p>
+            <div class="code-block">
+              <pre><code>The authenticity of host 'ВАШ_IP_АДРЕС_СЕРВЕРА (ВАШ_IP_АДРЕС_СЕРВЕРА)' can't be established.
+ED25519 key fingerprint is SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.
+Are you sure you want to continue connecting (yes/no/[fingerprint])?</code></pre>
+              <button class="copy-button" aria-label="Скопировать сообщение SSH" onclick="copyCode(this)">Копировать</button>
+            </div>
+
+            <div class="note">
+              <strong>Объяснение:</strong> При первом подключении SSH-клиент не имеет информации о публичном ключе сервера. Запрос подлинности хоста — это способ для клиента убедиться, что он подключается к ожидаемому серверу, а не к злоумышленнику, пытающемуся перехватить соединение (атака "человек посередине"). ED25519 key fingerprint — это уникальный цифровой отпечаток публичного ключа сервера.
+            </div>
+            <div class="two-note">
+              <strong>Ожидаемый результат:</strong> После ввода команды <code>ssh</code> вы увидите сообщение с запросом подтверждения подлинности хоста и его отпечатком.
+              <div class="note">
+                <strong>Примечание:</strong> Вместо <code>ВАШ_ХОСТНЕЙМ</code> будет отображаться реальное имя хоста вашего сервера.
+              </div>
+            </div>
+            <div class="three-note">
+              <strong>Безопасность:</strong> Всегда проверяйте отпечаток ключа, если это возможно, сравнивая его с известным отпечатком сервера. Если отпечаток не совпадает, возможно, происходит попытка атаки. Если вы уверены в подлинности сервера, можно продолжить.
+            </div>
+
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.2.2: Введите 'yes'" />
+              <strong>Шаг 1.2.2: Введите "yes" и нажмите Enter, чтобы добавить этот ключ в список известных ключей (<code>~/.ssh/known_hosts</code>) и продолжить подключение.</strong> Это действие сохраняет уникальный цифровой отпечаток вашего сервера на вашем компьютере, чтобы при последующих подключениях система могла автоматически проверять его подлинность.
+            </label>
+
+            <div class="note">
+              <strong>Объяснение:</strong> Файл <code>~/.ssh/known_hosts</code> на вашем локальном компьютере хранит публичные ключи известных SSH-серверов, к которым вы ранее подключались. Когда вы вводите "yes", публичный ключ сервера добавляется в этот файл. При последующих подключениях к тому же серверу SSH-клиент использует сохраненный ключ для быстрой и автоматической проверки подлинности сервера, избегая повторных запросов.
+            </div>
+            <div class="two-note">
+              <strong>Ожидаемый результат:</strong> После ввода "yes" соединение с сервером будет установлено, и вы увидите приглашение командной строки сервера (например, <code>root@ВАШ_ХОСТНЕЙМ:~#</code>).
+              <div class="note">
+                <strong>Примечание:</strong> Вместо <code>ВАШ_ХОСТНЕЙМ</code> будет отображаться реальное имя хоста вашего сервера.
+              </div>
+            </div>
+            <div class="three-note">
+              <strong>Безопасность:</strong> Добавление ключа в <code>known_hosts</code> является важным аспектом безопасности. Оно предотвращает атаки "человек посередине", так как если ключ сервера внезапно изменится (без вашего ведома о переустановке ОС), SSH-клиент предупредит вас, что может быть признаком компрометации.
+            </div>
+
+            <p>Если ключ хоста изменился (например, после переустановки операционной системы на сервере), вы увидите предупреждение:</p>
+            <div class="code-block">
+              <pre><code>PS C:\Users\Alex> ssh root@ВАШ_IP_АДРЕС_СЕРВЕРА
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@     WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!    @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:RDxGgBDcpJYtpvVWWwwBYIxThBXIp741xYwWp29inMQ.
+Please contact your system administrator.
+Add correct host key in C:\\Users\\Alex/.ssh/known_hosts to get rid of this message.
+Offending key in C:\\Users\\Alex/.ssh/known_hosts:1
+  remove with: ssh-keygen -f "C:\\Users\\Alex/.ssh/known_hosts" -R ВАШ_IP_АДРЕС_СЕРВЕРА</code></pre>
+              <button class="copy-button" aria-label="Скопировать предупреждение 'REMOTE HOST IDENTIFICATION HAS CHANGED!'" onclick="copyCode(this)">Копировать</button>
+            </div>
+
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.2.3: Устраните предупреждение 'REMOTE HOST IDENTIFICATION HAS CHANGED!'" />
+              <strong>Шаг 1.2.3: Устраните предупреждение "REMOTE HOST IDENTIFICATION HAS CHANGED!".</strong> Это предупреждение означает, что уникальный цифровой отпечаток сервера изменился. Это может быть признаком атаки "человек посередине" (man-in-the-middle), но чаще всего происходит после переустановки операционной системы на сервере.
+            </label>
+            <p><strong>Удалите старый ключ:</strong> Используйте команду, предложенную в сообщении об ошибке, чтобы удалить старый, конфликтующий ключ из вашего файла <code>known_hosts</code>. Замените <code>ВАШ_IP_АДРЕС_СЕРВЕРА</code> на IP-адрес вашего сервера.</p>
+            <div class="code-block">
+              <pre><code class="language-bash">ssh-keygen -R ВАШ_IP_АДРЕС_СЕРВЕРА</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду удаления старого ключа SSH" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <p><strong>Повторите подключение:</strong> После удаления старого ключа попробуйте подключиться к серверу снова (повторите Шаг 1.2.1). Вам будет предложено принять новый ключ, как при первом подключении. Введите "yes" и нажмите Enter.</p>
+
+            <div class="note">
+              <strong>Объяснение:</strong> Предупреждение "REMOTE HOST IDENTIFICATION HAS CHANGED!" указывает на то, что публичный ключ сервера, который ваш SSH-клиент ожидал увидеть, не совпадает с ключом, представленным сервером. Это может быть вызвано либо переустановкой ОС на сервере (что меняет его ключ), либо злонамеренной попыткой перехвата вашего соединения. Команда <code>ssh-keygen -R</code> удаляет старую запись для данного IP-адреса из файла <code>known_hosts</code>, позволяя вам принять новый ключ при следующем подключении.
+            </div>
+            <div class="two-note">
+              <strong>Ожидаемый результат:</strong> После выполнения <code>ssh-keygen -R</code> и повторной попытки подключения к серверу, вы увидите запрос подтверждения нового ключа хоста, как при первом подключении. После ввода "yes" вы сможете успешно подключиться к серверу.
+            </div>
+            <div class="three-note">
+              <strong>Безопасность:</strong> Крайне важно понимать причину изменения ключа. Если вы не переустанавливали ОС на сервере, изменение ключа может быть признаком атаки. В таком случае немедленно прекратите подключение и расследуйте причину. Если же вы уверены, что причина в переустановке, то безопасным будет удалить старый ключ и принять новый.
+            </div>
+          </div>
+        </details>
+
+        <details class="card">
+          <summary>1.3. Переименование сервера для улучшения читаемости и управляемости</summary>
+          <div class="section">
+            <p>Для улучшения читаемости и управляемости сервера:</p>
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.3.1: Редактирование файлов конфигурации" />
+              <strong>Шаг 1.3.1: Редактирование файлов конфигурации:</strong> Обычно имя узла хранится в файле <code>/etc/hostname</code>. Редактируем этот файл, указав новое имя, например <strong>"ВАШ_ХОСТНЕЙМ"</strong>. Затем сохраните файл (Ctrl+O, Enter, Ctrl+X в nano):
+            </label>
+            <div class="note">
+              <strong>Примечание:</strong> <code>ВАШ_ХОСТНЕЙМ</code> — это пример. Вы можете выбрать любое желаемое имя хоста для вашего сервера.
+            </div>
+            <div class="code-block">
+              <pre><code>sudo nano /etc/hostname</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду редактирования hostname" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.3.2: Перезагрузка служб" />
+              <strong>Шаг 1.3.2: Перезагрузка служб:</strong> Перезагружаем службу hostname:
+            </label>
+            <div class="code-block">
+              <pre><code>sudo systemctl restart systemd-hostnamed.service</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду перезапуска hostname service" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <p>Или перезагрузите систему целиком:</p>
+            <div class="code-block">
+              <pre><code>sudo reboot</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду перезагрузки" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.3.3: Проверка результата" />
+              <strong>Шаг 1.3.3: Проверка результата:</strong> После перезагрузки проверьте новое имя командой:
+            </label>
+            <div class="code-block">
+              <pre><code>hostname</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду проверки hostname" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <div class="note">
+              <strong>Объяснение причин переименования сервера:</strong>
+              <ol>
+                <li>**Читаемость и понятность:** Упрощает идентификацию сервера.</li>
+                <li>**Легкость обслуживания:** Упрощает управление и поиск серверов.</li>
+                <li>**Документирование:** Делает документацию более ясной.</li>
+                <li>**Повышение удобства мониторинга:** Улучшает логирование и мониторинг.</li>
+              </ol>
+            </div>
+            <div class="two-note">
+              <strong>Ожидаемый результат:</strong> <code>root@ВАШ_ХОСТНЕЙМ:~#</code><br>
+              Переименование сервера может привести к необходимости обновления ссылок и зависимостей. Незаметные остатки старых имен могут привести к сбоям в работе приложений.<br>
+              <strong>Поэтому выполняем замену имени сервера после установки сервера перед его его обновлением.</strong>
+              <div class="note">
+                <strong>Примечание:</strong> Вместо <code>ВАШ_ХОСТНЕЙМ</code> будет отображаться реальное имя хоста вашего сервера.
+              </div>
+            </div>
+            <div class="three-note">
+              <strong>Безопасность:</strong> Переименование сервера само по себе не влияет негативно на безопасность, однако неправильные подходы к этому процессу могут создавать угрозы. Тщательная подготовка и аккуратное выполнение процедуры минимизирует возможные риски.
+            </div>
+          </div>
+        </details>
+
+        <details class="card"> <summary>1.4. Создание и сохранение скрипта обновления системы</summary>
+          <div class="section">
+            <p><strong>Цель:</strong> — упростить регулярное обслуживание системы путём автоматизированного обновления установленных пакетов, удаления устаревших компонентов и минимизации ручных операций.</p>
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.4.1: Создайте файл" />
+              <strong>Шаг 1.4.1: Создайте файл с помощью команды:</strong>
+            </label>
+            <div class="code-block">
+              <pre><code>nano system_update.sh</code></pre>
+              <button class="copy-button" aria-label="Скопировать команду создания файла" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <label class="card">
+              <input type="checkbox" aria-label="Шаг 1.4.2: Скопируйте и вставьте код скрипта" />
+              <strong>Шаг 1.4.2: Скопируйте и вставьте код скрипта в открывшийся редактор, затем сохраните файл (Ctrl+O, Enter, Ctrl+X в nano):</strong>
+            </label>
+            <div class="code-block bash-script-code"> <pre><code>#!/bin/bash
+
+# Цветовые переменные
+green='\033[0;32m'
+yellow='\033[0;33m'
+red='\033[0;31m'
+reset='\033[0m'
+
+# Временная задержка
+timeout=10 # Количество секунд ожидания
+
+# Вспомогательные функции
+show_countdown() {
+  local t=$1
+  while [ $t -ge 0 ]; do
+    echo -ne "\r${yellow}Продолжить? (Y/n): Осталось $t секунд...${reset}"
+    sleep 1
+    let t-=1
+  done
+  echo -e "\n"
+}
+
+handle_input() {
+  read -t $timeout -n 1 answer
+  if [[ -n $answer ]]; then
+    echo -e "\n"
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Функция для подтверждения продолжения выполнения с таймером
+confirm_with_countdown() {
+  show_countdown $timeout &
+  COUNTDOWN_PID=$!
+  handle_input
+  RESULT=$?
+  kill $COUNTDOWN_PID 2>/dev/null
+  if [ $RESULT -eq 0 ]; then
+    # Вход осуществился до истечения времени
+    case "$answer" in
+      y|Y|"" )
+        true
+        ;;
+      n|N )
+        false
+        ;;
+      * )
+        confirm_with_countdown
+        ;;
+    esac
+  else
+    # Истёк таймер
+    true
+  fi
+}
+
+# Начало сценария
+echo -e "${green}Начало выполнения скрипта обновления системы...${reset}"
+
+# Сначала обновляем список репозиториев
+echo -e "${green}Обновляем список репозиториев...${reset}"
+sudo apt update
+if [ $? -eq 0 ]; then
+  echo -e "${green}Список репозиториев успешно обновлён.${reset}"
+else
+  echo -e "${red}Ошибка при обновлении списка репозиториев.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Затем устанавливаем пакет zstd после обновления списка репозиториев
+echo -e "${green}Устанавливаем пакет zstd для оптимального сжатия initramfs...${reset}"
+sudo apt install zstd -y
+if [ $? -eq 0 ]; then
+  echo -e "${green}zstd успешно установлен.${reset}"
+else
+  echo -e "${red}Ошибка при установке пакета zstd.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Устанавливаем дополнительные инструменты
+echo -e "${green}Устанавливаем дополнительные инструменты...${reset}"
+sudo apt install whiptail libterm-readline-perl-perl -y
+if [ $? -eq 0 ]; then
+  echo -e "${green}Инструменты успешно установлены.${reset}"
+else
+  echo -e "${red}Ошибка при установке инструментов.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Удаляем ненужные файлы и каталоги
+echo -e "${green}Удаляем лишнюю директорию...${reset}"
+sudo rm -rf /etc/systemd/system/sshd-keygen@.service.d/*
+if [ $? -eq 0 ]; then
+  echo -e "${green}Директория успешно удалена.${reset}"
+else
+  echo -e "${red}Ошибка при удалении директории.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Применяем обновления
+echo -e "${green}Применяем обновления...${reset}"
+sudo apt full-upgrade -y
+if [ $? -eq 0 ]; then
+  echo -e "${green}Обновления успешно применён.${reset}"
+else
+  echo -e "${red}Ошибка при обновлении системы.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Удаляем устаревшие пакеты
+echo -e "${green}Удаляем устаревшие пакеты...${reset}"
+sudo apt autoremove -y
+if [ $? -eq 0 ]; then
+  echo -e "${green}Устаревшие пакеты успешно удалены.${reset}"
+else
+  echo -e "${red}Ошибка при удалении устаревших пакетов.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Очищаем кэш пакетов
+echo -e "${green}Очищаем кэш пакетов...${reset}"
+sudo apt clean
+if [ $? -eq 0 ]; then
+  echo -e "${green}Кэш пакетов успешно очищен.${reset}"
+else
+  echo -e "${red}Ошибка при очистке кэша пакетов.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Создаём резервную копию конфигурации SSH
+echo -e "${green}Создаём резервную копию конфигурации SSH...${reset}"
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+if [ $? -eq 0 ]; then
+  echo -e "${green}Резервная копия успешно создана.${reset}"
+else
+  echo -e "${red}Ошибка при создании резервной копии.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Обновляем Grub и создаём новый initramfs с использованием zstd
+echo -e "${green}Обновляем Grub и создаём новый initramfs с использованием zstd...${reset}"
+sudo update-grub && sudo update-initramfs -u
+if [ $? -eq 0 ]; then
+  echo -e "${green}Grub и initramfs успешно обновлены.${reset}"
+else
+  echo -e "${red}Ошибка при обновлении Grub или initramfs.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Проверяем состояние пакетов
+echo -e "${green}Проверяем состояние пакетов...${reset}"
+sudo dpkg --configure -a
+if [ $? -eq 0 ]; then
+  echo -e "${green}Состояние пакетов проверено успешно.${reset}"
+else
+  echo -e "${red}Ошибка при проверке состояния пакетов.${reset}"
+fi
+confirm_with_countdown || exit 0
+
+# Предложение перезагрузки
+echo -e "${yellow}Рекомендуется перезагрузить систему для применения обновлений.${reset}"
+echo -ne "${yellow}Хотите перезагрузить систему сейчас? (Y/n): ${reset}"
+read -r choice
+case "$choice" in
+  y|Y )
+    sudo reboot
+    ;;
+  * )
+    echo -e "${yellow}Система не была перезагружена. Повторите команду 'reboot', когда будете готовы.${reset}"
+    ;;
+esac</code></pre>
+            <button class="copy-button" aria-label="Скопировать скрипт обновления системы" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 1.4.3: Сделайте скрипт исполняемым" />
+            <strong>Шаг 1.4.3: Сделайте скрипт исполняемым с помощью команды:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>chmod +x system_update.sh</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду chmod" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 1.4.4: Запустите скрипт" />
+            <strong>Шаг 1.4.4: Запустите скрипт с правами суперпользователя:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>sudo ./system_update.sh</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду запуска скрипта" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Объяснение:</strong>
+            <ul>
+              <li>Скрипт проводит полный цикл обновления системы, включая базу пакетов, ядро, приложения и библиотеки.</li>
+              <li>Производится очистка устаревших пакетов, устранение избыточных файлов и освобождение дискового пространства.</li>
+              <li>Предоставляется удобное управление ходом выполнения, включая таймеры ожидания и пошаговую информацию о состоянии системы.</li>
+            </ul>
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong>
+            <ul>
+              <li>**Актуальность системы:** Поддержание программного обеспечения в актуальном состоянии, повышение надежности и защиты.</li>
+              <li>**Эффективность и быстродействие:** Повышенная производительность и экономия ресурсов зачёт современных технологий сжатия и очищения системы.</li>
+              <li>**Удобство эксплуатации:** Простота и легкость выполнения ежедневных административных задач.</li>
+            </ul>
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong>
+            <ul>
+              <li>**Атаки на зависимости:** Минимизация рисков через обновление базы пакетов и исправление уязвимостей.</li>
+              <li>**Резервное копирование:** Предварительная защита критических файлов, таких как конфигурация SSH.</li>
+              <li>**Мониторинг состояния:** Показ статуса каждого этапа, предотвращение скрытых ошибок.</li>
+              <li>**Пользовательский контроль:** Возможность отмены действий в любое время, обеспечение осмысленности и понимания хода выполнения.</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+  <details class="card" id="section2">
+    <summary>2. Настройка DuckDNS</summary>
+    <div class="section">
+
+      <p class="goal-section"><strong>Цель:</strong> <em class="goal">Привязать динамический IP к доменному имени.</em></p>
+
+      <details class="card"> <summary>2.1. Зарегистрируйтесь на&nbsp;<a href="https://www.duckdns.org/" target="_blank">duckdns.org</a>:</summary>
+        <div class="section">
+          <p>Вы можете войти или зарегистрироваться, используя один из следующих сервисов:</p>
+          <ul>
+            <li><a href="https://github.com/login?client_id=9e41fca1df8aa920b378&return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3D9e41fca1df8aa920b378%26redirect_uri%3Dhttps%253A%252F%252Fwww.duckdns.org%252Flogin-github%26response_type%3Dcode&state=uhoibougyohouhpyh87yy" target="_blank">GitHub</a></li>
+            <li><a href="https://accounts.google.com/o/oauth2/auth?client_id=533923366961-e1oqlg6t40m2hngk02t5l4974f26b52s.apps.googleusercontent.com&redirect_uri=https%3A%252F%252Fwww.duckdns.org%252Flogin-google&response_type=code&scope=profile+email&state=some_random_string" target="_blank">Google</a></li>
+            <li><a href="https://twitter.com/oauth/authenticate?oauth_token=YOUR_OAUTH_TOKEN" target="_blank">Twitter</a></li>
+          </ul>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 2.1.1: Создайте субдомен и скопируйте токен" />
+            <strong>Шаг 2.1.1: Создайте субдомен</strong> (например, <code>ВАШ_СУБДОМЕН.duckdns.org</code>). При успешном создании субдомена вы получите уведомление "success: domain ВАШ_СУБДОМЕН.duckdns.org added to your account". **Скопируйте токен** (например, <code>ВАШ_ТОКЕН</code>).
+          </label>
+          <div class="note">
+            <strong>Объяснение:</strong> DuckDNS предоставляет бесплатный динамический DNS.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong> Субдомен создан, токен сохранен.
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong> Храните токен в секрете.
+          </div>
+        </div>
+      </details>
+
+      <details class="card"> <summary>2.2. Настройте обновление IP:</summary>
+        <div class="section">
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 2.2.1: Откройте crontab" />
+            <strong>Шаг 2.2.1: Откройте crontab для редактирования:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>crontab -e</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду crontab" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 2.2.2: Добавьте строку для обновления IP" />
+            <strong>Шаг 2.2.2: Выберите <code>nano</code> (введите 1), добавьте следующую строку для обновления IP каждые 5 минут:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>*/5 * * * * curl -k "https://www.duckdns.org/update?domains=ВАШ_СУБДОМЕН.duckdns.org&token=ВАШ_ТОКЕН=" >/dev/null 2>&1</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду cron" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <p>Сохраните (Ctrl+X, Y, Enter).</p>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 2.2.3: Проверка журнала сообщений" />
+            <strong>Шаг 2.2.3: Проверка журнала сообщеланий:</strong> Crontab записывает успешность выполнения команд в журнал syslog или специальный log-файл. Обычно этот файл находится в <code>/var/log/cron.log</code> или <code>/var/log/syslog</code> (для Debian-based дистрибутивов). Можно посмотреть последние события командой:
+          </label>
+          <div class="code-block">
+            <pre><code>sudo grep duckdns /var/log/syslog*</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду grep" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Объяснение:</strong> Эта запись показывает, что демон cron запустил задачу обновления DNS записи для вашего домена на сервисе DuckDNS.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong> Вывод должен быть без ошибок. Пример успешного выполнения команды:
+            <div class="code-block">
+              <pre><code>May 31 14:45:01 ВАШ_ХОСТНЕЙМ CRON[114570]: ([ИМЯ_ПОЛЬЗОВАТЕЛЯ]) CMD (curl -k "https://www.duckdns.org/update?domains=ВАШ_СУБДОМЕН.duckdns.org&token=ВАШ_ТОКЕН=" >/dev/null 2>&1)</code></pre>
+              <button class="copy-button" aria-label="Скопировать пример лога" onclick="copyCode(this)">Копировать</button>
+            </div>
+            <div class="note">
+              <strong>Примечание:</strong> Вместо <code>ВАШ_ХОСТНЕЙМ</code> будет отображаться реальное имя хоста вашего сервера.
+            </div>
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong> Убедитесь, что <code>ВАШ_СУБДОМЕН.duckdns.org</code> и <code>ВАШ_ТОКЕН</code> заменены на ваши реальные значения.
+          </div>
+        </div>
+      </details>
+
+      <details class="card"> <summary>2.3. Проверьте DuckDNS:</summary>
+        <div class="section">
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 2.3.1: Выполните команду для проверки" />
+            <strong>Шаг 2.3.1: Выполните команду для проверки, что домен указывает на IP сервера:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>ping ВАШ_СУБДОМЕН.duckdns.org</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду ping" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Объяснение:</strong> Эта команда проверяет, что ваш домен успешно разрешается в корректный IP-адрес вашего сервера.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong> Вы должны увидеть ответы от вашего сервера. Пример успешного пинга:
+            <div class="code-block">
+              <pre><code>Обмен пакетами с ВАШ_СУБДОМЕН.duckdns.org [ВАШ_IP_АДРЕС_СЕРВЕРА] с 32 байтами данных:
+Ответ от ВАШ_IP_АДРЕС_СЕРВЕРА: число байт=32 время&lt;1мс TTL=128
+Ответ от ВАШ_IP_АДРЕС_СЕРВЕРА: число байт=32 время&lt;1мс TTL=128
+Ответ от ВАШ_IP_АДРЕС_СЕРВЕРА: число байт=32 время&lt;1мс TTL=128
+Ответ от ВАШ_IP_АДРЕС_СЕРВЕРА: число байт=32 время&lt;1мс TTL=128
+
+Статистика Ping для ВАШ_IP_АДРЕС_СЕРВЕРА:
+    Пакетов: отправлено = 4, получено = 4, потеряно = 0
+    (0% потерь)</code></pre>
+              <button class="copy-button" aria-label="Скопировать пример вывода ping" onclick="copyCode(this)">Копировать</button>
+            </div>
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong> Если IP неверный или пинг не проходит, проверьте правильность токена и настройки cron на DuckDNS.
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+  <details class="card" id="section3">
+    <summary>3. Установка SSL-сертификата с помощью Acme.sh</summary>
+    <div class="section">
+
+      <p class="goal-section"><strong>Цель:</strong> <em class="goal">Автоматическая выдача и управление SSL/TLS сертификатами от Let's Encrypt.</em></p>
+
+      <details class="card"> <summary>3.1. Подготовка системы и установка Acme.sh</summary>
+        <div class="section">
+          <p>Acme.sh — это бесплатный инструмент для автоматической выдачи сертификатов SSL/TLS от службы Let's Encrypt.</p>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 3.1.1: Обновите систему и установите curl и socat" />
+            <strong>Шаг 3.1.1: Сначала обновите систему и установите два полезных инструмента: <code>curl</code> для взаимодействия с сетью и <code>socat</code> для работы с сокетами и каналами связи.</strong> Эти программы значительно расширяют возможности администратора Linux при работе с сетевыми ресурсами и диагностикой.
+          </label>
+          <div class="code-block">
+            <pre><code>sudo apt update
+sudo apt install curl
+sudo apt install socat</code></pre>
+            <button class="copy-button" aria-label="Скопировать команды установки зависимостей" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Объяснение:</strong> Приведённые команды используются для обновления пакетов и установки необходимых программ на системах Linux, работающих под управлением Debian или Ubuntu.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong>
+            <ul>
+              <li>Система обновлена и необходимые инструменты (<code>curl</code>, <code>socat</code>) установлены без ошибок.</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <details class="card"> <summary>3.2. Получение SSL-сертификата</summary>
+        <div class="section">
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 3.2.1: Скачайте утилиту Acme.sh" />
+            <strong>Шаг 3.2.1: Далее скачиваем утилиту, которая автоматически создаст нам сертификат после запуска.</strong> **Вы можете указать любой email-адрес, подтверждений на него приходить не будет, однако рекомендуется использовать реальный адрес для получения важных уведомлений от Let's Encrypt.**
+          </label>
+          <div class="code-block">
+            <pre><code>curl https://get.acme.sh | sh -s email=ВАШ_EMAIL@example.com</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду установки Acme.sh" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Объяснение:</strong> Данная команда предназначена для быстрой установки инструмента <code>acme.sh</code>, который автоматически генерирует бесплатные SSL-сертификаты от сервиса Let’s Encrypt.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong>
+            <ul>
+              <li>Будет выполнена проверка совместимости и зависимостей.</li>
+              <li>Инструмент <code>acme.sh</code> установит себя в домашнюю директорию текущего пользователя (<code>~/.acme.sh</code>).</li>
+              <li>Будут созданы соответствующие конфигурационные файлы и структуры каталогов.</li>
+              <li>Ваша почта (<code>ВАШ_EMAIL@example.com</code>) сохранится в настройках для возможных уведомлений от Let's Encrypt.</li>
+              <li>Добавлен псевдоним в <code>.bashrc</code>, теперь вы сможете вызывать <code>acme.sh</code> без полного пути к нему.</li>
+              <li>Создано задание Cron для ежемесячного обновления сертификатов (например, <code>24 2 * * * "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" > /dev/null</code>), что гарантирует своевременное продление ваших сертификатов.</li>
+            </ul>
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong> Убедитесь, что вы используете реальный или проверенный адрес электронной почты, так как он может быть использован для важных уведомлений от Let's Encrypt.
+          </div>
+
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 3.2.2: Создайте переменную для субдомена" />
+            <strong>Шаг 3.2.2: Далее создаем переменную, в которой будет хранится ваш поддомен.</strong> Замените <code>ВАШ_СУБДОМЕН.duckdns.org</code> на ваш фактический субдомен:
+          </label>
+          <div class="code-block">
+            <pre><code>export DOMAIN=ВАШ_СУБДОМЕН.duckdns.org</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду экспорта переменной DOMAIN" onclick="copyCode(this)">Копировать</button>
+          </div>
+
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 3.2.3: Запустите утилиту для создания сертификата" />
+            <strong>Шаг 3.2.3: И запускаем утилиту, которая создаст сертификат.</strong> **Важно:** перед запуском этой утилиты необходимо, чтобы был запущен какой-либо веб-сервер (Nginx, Apache и т.d.) на порту 80, иначе ACME-сервис не сможет подтвердить владение доменом.
+          </label>
+          <div class="code-block">
+            <pre><code>mkdir -p /var/lib/marzban/certs
+
+~/.acme.sh/acme.sh \
+  --issue --force --standalone -d "$DOMAIN" \
+  --fullchain-file "/var/lib/marzban/certs/$DOMAIN.cer" \
+  --key-file "/var/lib/marzban/certs/$DOMAIN.cer.key"</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду выпуска сертификата" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Объяснение:</strong> Эта команда инициирует процесс выпуска SSL-сертификата. Флаг <code>--standalone</code> означает, что <code>acme.sh</code> запустит свой временный веб-сервер на порту 80 для прохождения проверки владения доменом.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong>
+            <ul>
+              <li>Сертификат будет успешно выпущен и сохранен в указанной директории.</li>
+              <li>Вы увидите подтверждение успешного выпуска сертификата в консоли.</li>
+            </ul>
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong>
+            <ul>
+              <li>Убедитесь, что порт 80 свободен до запуска этой команды, чтобы избежать конфликтов с другими веб-серверами.</li>
+              <li>Путь <code>/var/lib/marzban/certs/</code> используется как пример; вы можете выбрать другой путь, подходящий для вашего приложения.</li>
+            </ul>
+          </div>
+
+          <p><strong>Шаг 3.2.4:</strong> После завершения работы утилиты в папке <code>/var/lib/marzban/certs/</code> будут созданы два файла с именами:</p>
+          <ul>
+            <li><code>ВАШ_СУБДОМЕН.duckdns.org.cer</code></li>
+            <li><code>ВАШ_СУБДОМЕН.duckdns.org.key</code></li>
+          </ul>
+          <div class="note">
+            **Примечание:** Замените <code>ВАШ_СУБДОМЕН.duckdns.org</code> на ваш фактический субдомен. Эти файлы являются вашим SSL-сертификатом и приватным ключом.
+          </div>
+        </div>
+      </details>
+    </div>
+  </details>
+  <details class="card" id="section4">
+    <summary>4. Установка приложений Marzban</summary>
+    <div class="section">
+
+      <p class="goal-section"><strong>Цель:</strong> <em class="goal">Развернуть приложения для управления прокси.</em></p>
+
+      <details class="card"> <summary>4.1. Установите Marzban:</summary>
+        <div class="section">
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.1.1: Установите Marzban" />
+            <strong>Шаг 4.1.1: Установите Marzban</strong> (Делается это всего одной командой):
+          </label>
+          <div class="code-block">
+            <pre><code>sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban.sh)" @ install</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду установки Marzban" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <p>После завершения работы скрипта установки, вы увидите логи работы Marzban. Нажмите <code>CTRL+C</code>, чтобы прекратить их отображение; Marzban продолжит работать в фоновом режиме как системный сервис.</p>
+          <div class="note">
+            <strong>Объяснение:</strong> Скрипт <code>Marzban.sh</code> обычно включает в себя установку необходимого ПО и конфигурационных файлов для развертывания определенного набора функций или сервисов. В частности, это может включать установку Docker, сборку контейнеров, конфигурирование сетевых правил и многое другое.
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong> Установка завершена. В консоли могут быть выведены временные логин, пароль и порт, но для безопасного доступа к дашборду вам потребуется настроить SSL и создать пользователя, как описано далее.
+          </div>
+          <div class="three-note">
+            <strong>Безопасность:</strong> Перед запуском скриптов из интернета рекомендуется ознакомиться с их содержимым, чтобы убедиться в отсутствии вредоносного кода.
+          </div>
+        </div>
+      </details>
+
+      <details class="card"> <summary>4.2. Подключение SSL сертификата:</summary>
+        <div class="section">
+          <p>Так как доступ к дашборду Marzban возможен только через защищенное соединение, нам необходимо подключить только что созданные сертификаты для перехода сайта панели на HTTPS.</p>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.2.1: Откройте и редактируйте файл .env" />
+            <strong>Шаг 4.2.1: Для этого откроем и редактируем файл <code>.env</code>:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>nano /opt/marzban/.env</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду редактирования .env" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <p>Там надо найти следующие строчки, убрать перед ними знак `#` и вставить путь до файлов сертификата и указать адрес сайта панели:</p>
+          <div class="code-block">
+            <pre><code>UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/ВАШ_СУБДОМЕН.duckdns.org.cer"
+UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/ВАШ_СУБДОМЕН.duckdns.org.cer.key"
+XRAY_SUBSCRIPTION_URL_PREFIX = "https://ВАШ_СУБДОМЕН.duckdns.org"</code></pre>
+            <button class="copy-button" aria-label="Скопировать конфигурацию SSL для .env" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <p>Обратите внимание на первые две строчки: часть <code>"/var/lib/marzban/certs/"</code> трогать не нужно, это путь до папки с файлами сертификатов. <code>ВАШ_СУБДОМЕН.duckdns.org</code> нужно заменить на ваш фактический поддомен (или домен, если он у вас есть). В первой строчке файл имеет расширение <code>.cer</code>, во второй строчке он имеет расширение <code>.cer.key</code>. Чтобы сохранить изменения и выйти из редактора, нажмите <code>CTRL+X</code>, потом <code>y</code> и <code>Enter</code>.</p>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.2.2: Просмотрите имена сертификатов" />
+            <strong>Шаг 4.2.2: Если вы забыли имена сертификатов, то их можно посмотреть этой командой:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>ls /var/lib/marzban/certs/</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду просмотра сертификатов" onclick="copyCode(this)">Копировать</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="card"> <summary>4.3. Завершение настройки сервера:</summary>
+        <div class="section">
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.3.1: Перезапустите Marzban" />
+            <strong>Шаг 4.3.1: Перезапустите Marzban:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>marzban restart</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду перезапуска Marzban" onclick="copyCode(this)">Копировать</button>
+          </div>
+          
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.3.2: Создайте логин и пароль пользователя панели Marzban" />
+            <strong>Шаг 4.3.2: Создайте логин и пароль пользователя панели Marzban:</strong>
+          </label>
+          <p>У вас есть два варианта для создания пользователя:</p>
+          <div class="note">
+            <strong>Вариант 1: С помощью команды с прямым указанием имени пользователя и пароля:</strong>
+          </div>
+          <div class="code-block">
+            <pre><code class="language-bash">marzban cli admin create --sudo --username ИМЯ_АДМИНА_MARZBAN --password ПАРОЛЬ_АДМИНА_MARZBAN</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду создания пользователя Marzban с указанием данных" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Вариант 2: В интерактивном режиме (терминал запросит имя пользователя и пароль):</strong>
+          </div>
+          <div class="code-block">
+            <pre><code class="language-bash">marzban cli admin create --sudo</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду интерактивного создания пользователя Marzban" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="two-note">
+            <strong>Ожидаемый результат:</strong> (Если выбран интерактивный режим) После выполнения любой из этих команд, Marzban CLI предложит вам ввести имя пользователя и пароль для нового администратора. Например:
+            <pre><code>Enter username:
+Enter password:
+Confirm password:
+Admin user created successfully.</code></pre>
+            После успешного создания пользователя вы сможете использовать эти учетные данные для входа в панель управления Marzban.
+          </div>
+          <p>После перезапуска и создания пользователя вы сможете получить доступ к дашборду по адресу:</p>
+          <div class="code-block">
+            <pre><code>https://ВАШ_СУБДОМЕН.duckdns.org:8000/dashboard/</code></pre>
+            <button class="copy-button" aria-label="Скопировать URL дашборда Marzban" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <p><code>https://</code> в начале обязательно, <code>ВАШ_СУБДОМЕН.duckdns.org</code> надо заменить на имя вашего поддомена (или домена).</p>
+        </div>
+      </details>
+
+      <details class="card"> <summary>4.4. Настройка подключений:</summary>
+        <div class="section">
+          <p>По умолчанию в Marzban доступно создание подключений только по протоколу Shadowsocks. Для того чтобы добавить возможность создания подключений по другим протоколам, в правом верхнем углу нажмите на значок шестеретки, откроются настройки подключений, удалите все из поля "Конфигурация".</p>
+
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.4.1: Получите PrivateKey и ShortIds для VLESS TCP REALITY" />
+            <strong>Шаг 4.4.1: Для настройки протокола VLESS TCP REALITY, вам понадобятся параметры <code>privateKey</code> и <code>shortIds</code>. Для их получения используйте поочередно две команды:</strong>
+          </label>
+          <div class="code-block">
+            <pre><code>docker exec marzban-marzban-1 xray x25519
+openssl rand -hex 8</code></pre>
+            <button class="copy-button" aria-label="Скопировать команды для privateKey и shortIds" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <p>При выполнении первой команды вы получите параметры <strong><code>privateKey</code></strong>, которые необходимо вставить в соответствующую строку JSON-конфигурации:</p>
+          <div class="code-block">
+            <pre><code>root@ВАШ_ХОСТНЕЙМ:~# docker exec marzban-marzban-1 xray x25519
+Private key: Sy****************************************Fj<span style="background-color: yellow; font-weight: bold;"><------------- privateKey</span>
+Public key: Uk**************************************w4</code></pre>
+            <button class="copy-button" aria-label="Скопировать пример вывода privateKey" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Примечание:</strong> Вместо <code>ВАШ_ХОСТНЕЙМ</code> будет отображаться реальное имя хоста вашего сервера.
+          </div>
+          <div class="three-note">
+            <p><strong>Важно:</strong> Строка с <code>"privateKey"</code> должна быть в одну строчку. Если при вставке ключа символ кавычка перенесется на следующую строку, необходимо это поправить, вернув её назад.</p>
+          </div>
+          <p>При выполнении второй команды вы получите параметр <strong><code>shortIds</code></strong>. Значение вставить в строку: <code>"shortIds": ["ВАШ_SHORT_IDS"]</code> в файле конфигурации JSON:</p>
+          <div class="code-block">
+            <pre><code>root@ВАШ_ХОСТНЕЙМ:~# openssl rand -hex 8
+06f**********595      <span style="background-color: yellow; font-weight: bold;"><----- shortIds</span>
+root@ВАШ_ХОСТНЕЙМ:~#</code></pre>
+            <button class="copy-button" aria-label="Скопировать пример вывода shortIds" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Примечание:</strong> Вместо <code>ВАШ_ХОСТНЕЙМ</code> будет отображаться реальное имя хоста вашего сервера.
+          </div>
+          <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.4.2: Вставьте JSON конфигурацию" />
+            <strong>Шаг 4.4.2: Вставьте следующий JSON-код в поле "Конфигурация", заменив <code>ВАШ_PRIVATE_KEY</code> и <code>ВАШ_SHORT_IDS</code> на полученные вами значения:</strong>
+          </label>
+          <div class="code-block bash-script-code"> <pre><code>{
+  "log": {
+    "loglevel": "warning"
+  },
+  "routing": {
+    "rules": [
+      {
+        "ip": [
+          "geoip:private"
+        ],
+        "outboundTag": "BLOCK",
+        "type": "field"
+      }
+    ]
+  },
+  "inbounds": [
+    {
+      "tag": "VMESS TCP NOTLS",
+      "listen": "0.0.0.0",
+      "port": 445,
+      "protocol": "vmess",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "tcpSettings": {},
+        "security": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    },
+    {
+      "tag": "TROJAN TCP NOTLS",
+      "listen": "0.0.0.0",
+      "port": 444,
+      "protocol": "trojan",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "tcpSettings": {},
+        "security": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    },
+    {
+      "tag": "VLESS TCP REALITY",
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "tcpSettings": {},
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "github.com:443",
+          "xver": 0,
+          "serverNames": [
+            "github.com"
+          ],
+          "privateKey": "ВАШ_PRIVATE_KEY",
+          "shortIds": [
+            "ВАШ_SHORT_IDS"
+          ]
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    },
+    {
+      "tag": "Shadowsocks TCP",
+      "listen": "0.0.0.0",
+      "port": 1080,
+      "protocol": "shadowsocks",
+      "settings": {
+        "clients": [],
+        "network": "tcp,udp"
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "DIRECT"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "BLOCK"
+    }
+  ]
+}</code></pre>
+            <button class="copy-button" aria-label="Скопировать JSON конфигурацию Marzban" onclick="copyCode(this)">Копировать</button>
+          </div>
+          <div class="note">
+            <strong>Пояснение к Reality:</strong> Параметр <code>"dest": "github.com:443"</code> в Reality указывает на реальный, известный веб-сайт (например, GitHub), трафик к которому будет имитироваться. 
+			Это помогает обходить обнаружение и блокировку, делая ваш трафик похожим на обычное HTTPS-соединение.
+          </div>
+          <p>Этот код даст возможность создавать подключения по протоколам VLESS, TROJAN, VMESS и Shadowsocks. Далее нажмите <span style="background-color: yellow; font-weight: bold;">"Сохранить"</span> 
+		  и <span style="background-color: yellow; font-weight: bold;">"Перезагрузить ядро"</span> ядро", закройте окно настроек и <span style="background-color: yellow; font-weight: bold;"><span style="background-color: yellow; font-weight: bold;">перезагрузите страницу</span></span>. 
+		  Теперь можно создавать ключи доступа и подключать устройства. Сейчас стабильно во всех регионах и на всех устройствах работают VLESS и TROJAN, поэтому я рекомендую использовать один из них.</p>
+        </div>
+      </details>
+
+      <div class="three-note">
+        <strong>Важно: Настройка фаервола!</strong>
+        <p>После настройки Marzban на различных портах, жизненно важно убедиться, что эти порты открыты в вашем фаерволе (UFW, firewalld и т.д.). Без этого шага клиенты не смогут подключиться к вашему серверу Marzban.</p>
+
+        <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.4.3: Проверьте статус фаервола" />
+            <strong>Шаг 4.4.3: Проверьте текущий статус вашего фаервола (если используете UFW):</strong>
+        </label>
+        <div class="code-block">
+            <pre><code>sudo ufw status</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду проверки статуса UFW" onclick="copyCode(this)">Копировать</button>
+        </div>
+        <div class="note">
+            <strong>Ожидаемый результат:</strong> Вы увидите статус UFW (например, "Status: active" или "Status: inactive") и список разрешенных портов, если они есть. Если статус "inactive", то фаервол неактивен, и порты открывать не нужно (но рекомендуется включить для безопасности).
+        </div>
+
+        <label class="card">
+            <input type="checkbox" aria-label="Шаг 4.4.4: Откройте необходимые порты" />
+            <strong>Шаг 4.4.4: Откройте порты, необходимые для используемых протоколов.</strong> Для каждого протокола Marzban использует свой порт:
+            <ul>
+                <li>VLESS TCP REALITY: порт <strong>443/tcp</strong></li>
+                <li>TROJAN TCP NOTLS: порт <strong>444/tcp</strong></li>
+                <li>VMESS TCP NOTLS: порт <strong>445/tcp</strong></li>
+                <li>Shadowsocks TCP: порт <strong>1080/tcp</strong></li>
+            </ul>
+            <p><strong>Открывайте только те порты, которые соответствуют протоколам, которые вы планируете использовать.</strong></p>
+            <p>Пример команды для открытия порта 443/tcp (для VLESS) с использованием UFW:</p>
+        </label>
+        <div class="code-block">
+            <pre><code>sudo ufw allow 443/tcp</code></pre>
+            <button class="copy-button" aria-label="Скопировать команду открытия порта 443/tcp" onclick="copyCode(this)">Копировать</button>
+        </div>
+        <p>Повторите команду <code>sudo ufw allow [НОМЕР_ПОРТА]/tcp</code> для каждого протокола, который вы хотите использовать. После добавления правил, если UFW был неактивен, включите его. Если UFW уже активен, примените изменения командой <code>sudo ufw reload</code>:</p>
+        <div class="code-block">
+            <pre><code>sudo ufw enable  # Только если UFW не активен
+sudo ufw reload  # Если UFW уже активен и вы добавили новые правила</code></pre>
+            <button class="copy-button" aria-label="Скопировать команды включения/перезагрузки UFW" onclick="copyCode(this)">Копировать</button>
+        </div>
+      </div>
+
+    </div>
+  </details>
+  </div> 
+</body>
+</html>
