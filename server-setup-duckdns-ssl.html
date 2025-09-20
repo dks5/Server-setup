@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Руководство по настройке сервера с DuckDNS, SSL</title>
+  <style>
+    /* Оптимизированная структура CSS-переменных.
+      Переменные сгруппированы по назначению для лучшей читаемости.
+      Удалены дубликаты: --inline-code-text и --button-text-color.
+    */
+    :root {
+      /* === Типографика === */
+      --font-family: 'Segoe UI', Arial, sans-serif;
+      --text-color: #222; /* Основной цвет текста */
+      --goal-color: #cc3300; /* Цвет для текста цели */
+
+      /* === Основная палитра === */
+      --bg-color: #f9f9f9; /* Фон страницы */
+      --surface-bg: white; /* Фон для карточек, кнопок и других элементов */
+      --accent-color: #0066cc; /* Основной акцентный цвет */
+      --border-color: #ddd; /* Цвет границ */
+
+      /* === Компоненты: Примечания (Notes) === */
+      --note-bg: #e7f3ff;
+      --note-border: #3399ff;
+      --two-note-bg: #F5F5DC;
+      --two-note-border: #DAA520;
+      --three-note-bg: #fff3e0;
+      --three-note-border: #ffb74d;
+      
+      /* === Компоненты: Блоки кода === */
+      --code-bg: #f8f9fa; /* Фон для <pre> */
+      --inline-code-bg: #eaeaea; /* Фон для <code> */
+
+      /* === Метрики и эффекты === */
+      --radius: 8px; /* Радиус скругления углов */
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.12); /* Основная тень */
+      --section-spacing: 30px; /* Отступ между секциями */
+    }
+
+    /* Базовые стили для тела документа */
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      line-height: 1.6;
+      overflow-x: hidden;
+      overflow-wrap: break-word;
+    }
+
+    .card {
+      background: var(--surface-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    h1, h2, h3 {
+      color: var(--accent-color);
+      margin-top: 5px;
+    }
+
+    h2 {
+      font-size: 1.7em;
+    }
+    
+    .section {
+      padding: 1rem;
+    }
+    
+    details .section {
+       margin-bottom: 0;
+    }
+    
+    /* Стили примечаний */
+    .note, .two-note, .three-note {
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      overflow-wrap: break-word;
+      border-left: 4px solid;
+    }
+
+    .note {
+      background-color: var(--note-bg);
+      border-color: var(--note-border);
+    }
+
+    .two-note {
+      background-color: var(--two-note-bg);
+      border-color: var(--two-note-border);
+    }
+
+    .three-note {
+      background-color: var(--three-note-bg);
+      border-color: var(--three-note-border);
+    }
+    .three-note strong {
+      font-weight: bold;
+    }
+
+    /* Стили блоков кода */
+    .code-block {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      white-space: pre-wrap;
+      overflow-x: auto;
+      margin: 0;
+      font-family: "Courier New", monospace;
+      color: var(--text-color);
+      flex-grow: 1;
+      max-width: calc(100% - 125px);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .bash-script-code pre {
+      max-height: 350px; /* Увеличена высота для скрипта */
+      overflow-y: auto;
+    }
+
+    code {
+      background: var(--inline-code-bg);
+      color: var(--text-color);
+      padding: 3px 5px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+
+    .copy-button {
+      padding: 8px 12px;
+      background: var(--accent-color);
+      color: var(--surface-bg);
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-family: var(--font-family);
+      font-size: 14px;
+      transition: background-color 0.3s, opacity 0.2s;
+      flex-shrink: 0;
+      width: 110px;
+    }
+
+    .copy-button:hover {
+      opacity: 0.85;
+    }
+
+    .goal-section {
+        margin: 0;
+    }
+    strong:has(~ em.goal) {
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    em.goal {
+      color: var(--goal-color);
+      font-style: italic;
+    }
+    
+    label.card {
+        display: block;
+        margin-bottom: 10px;
+        padding: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    label.card:hover {
+        background-color: #f0f0f0;
+    }
+    input[type="checkbox"] {
+        margin-right: 10px;
+        transform: scale(1.2);
+    }
+
+    /* === ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ СВОРАЧИВАЕМЫХ БЛОКОВ === */
+    details {
+      margin-bottom: var(--section-spacing);
+      background: var(--surface-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid #ddd;
+      transition: box-shadow 0.3s ease;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: normal;
+      color: var(--accent-color);
+      padding: 15px 20px;
+      outline: none;
+      display: flex;
+      align-items: center;
+      font-size: 1.3em;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      border-radius: var(--radius);
+    }
+
+    summary:hover {
+      background: #f0f0f0;
+    }
+
+    /* СТИЛЬ ЗАГОЛОВКА ПРИ РАСКРЫТИИ (НОВЫЙ) */
+    details[open] > summary {
+      background: linear-gradient(145deg, #ffb75e, #ffa84c);
+      color: #333; 
+      border: 4px solid #e89533;
+      border-radius: 12px;
+      box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.4),
+        0 4px 8px rgba(0, 0, 0, 0.2);
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+      font-weight: 600; 
+      margin: -2px; 
+    }
+    
+    details[open] .section {
+        border-radius: 0 0 var(--radius) var(--radius); 
+    }
+
+
+    /* Стили для блока ввода переменных */
+    details#section-variables .section { 
+        padding: 20px;
+        margin: 20px;
+        border: 1px solid var(--note-border); 
+        background-color: var(--note-bg); 
+        border-radius: var(--radius); 
+        box-shadow: none; 
+    }
+    
+    /* === НОВАЯ ТРЕХКОЛОНОЧНАЯ СЕТКА ДЛЯ ПЛЕЙСХОЛДЕРОВ === */
+    .three-column-inputs {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .input-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    /* Медиазапросы для 2 и 3 колонок */
+    @media (min-width: 768px) {
+        .three-column-inputs {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (min-width: 1024px) {
+        .three-column-inputs {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    /* === НОВАЯ ДВУХКОЛОНОЧНАЯ СЕТКА ДЛЯ ПОСЛЕДНИХ ПОЛЕЙ === */
+    .two-column-final-inputs {
+        grid-column: 1 / -1; 
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-top: 15px;
+    }
+
+    @media (min-width: 1024px) {
+        .two-column-final-inputs {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .two-column-final-inputs .full-width-item {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .input-group, .generator-group {
+        display: flex; 
+        flex-direction: column;
+    }
+    
+    .generator-group .input-wrapper {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .input-group label, .generator-group label {
+        margin-bottom: 5px;
+        font-weight: 500;
+        cursor: default;
+    }
+
+    .input-group input[type="text"],
+    .input-group input[type="password"],
+    .input-group textarea,
+    .generator-group input[type="text"] {
+        width: 100%; 
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1em;
+        box-sizing: border-box;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    .input-group textarea {
+        resize: none; 
+        overflow: hidden; 
+        min-height: 42px; 
+        font-family: inherit; 
+    }
+
+    .input-group input:focus, .input-group textarea:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 5px rgba(0, 102, 204, 0.3);
+        outline: none;
+    }
+    
+    .generator-group .input-wrapper input {
+        flex-grow: 1;
+    }
+
+    .generator-group button,
+    .button-group button { 
+        padding: 10px 15px;
+        background: var(--accent-color);
+        color: var(--surface-bg);
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 1em;
+        transition: background-color 0.3s, opacity 0.2s;
+        white-space: nowrap; 
+    }
+    .generator-group button:hover,
+    .button-group button:hover { 
+        opacity: 0.85;
+    }
+    
+    /* === ИЗМЕНЕННЫЕ СТИЛИ ДЛЯ ГРУППЫ КНОПОК === */
+    .button-group {
+        margin-top: 20px;
+        grid-column: 1 / -1; 
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .button-group button {
+        margin-left: 0; 
+    }
+
+    /* === НОВЫЙ СТИЛЬ ДЛЯ КОНТЕЙНЕРА КНОПКИ И ПОДСКАЗКИ === */
+    .button-with-tooltip {
+        display: flex;
+        align-items: center;
+        gap: 8px; 
+    }
+
+    .main-title {
+      text-align: center;
+    }
+
+    .toc ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .toc li {
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+    }
+    .toc li::before {
+        content: '◇';
+        position: absolute;
+        left: 0;
+        color: var(--accent-color);
+        font-size: 0.9em;
+    }
+    .toc .card {
+        padding: 0;
+        box-shadow: none;
+        margin-bottom: var(--section-spacing);
+    }
+    .toc details {
+        margin-bottom: 0;
+        border: 1px solid #ddd;
+    }
+    .toc summary {
+        font-size: 1.3em;
+        padding: 15px 20px;
+    }
+    .toc ul {
+        padding: 15px 20px 15px 40px;
+    }
+    .toc ul ul {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    /* === СТИЛИ ДЛЯ ИНТЕРАКТИВНЫХ ЭЛЕМЕНТОВ === */
+    .action-item {
+      margin-bottom: 25px;
+    }
+    .action-item:last-child {
+      margin-bottom: 10px;
+    }
+
+    .action-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .action-label {
+        display: flex;
+        align-items: center;
+        font-size: 1.1em;
+        font-weight: 500;
+        flex-grow: 1;
+        margin: 0;
+        cursor: pointer;
+    }
+    .action-label input[type="checkbox"] {
+        margin-right: 12px;
+        transform: scale(1.3);
+    }
+    
+    .info-tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .info-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background-color: var(--accent-color);
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      font-style: italic;
+      font-size: 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .info-icon:hover {
+        transform: scale(1.1);
+        background-color: #0056b3;
+    }
+
+    .tooltip-content {
+      visibility: hidden;
+      width: 600px; 
+      max-width: 90vw;
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      text-align: left;
+      border-radius: var(--radius);
+      padding: 12px 15px; 
+      position: absolute;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      font-size: 0.95em;
+      line-height: 1.5;
+      top: 150%; 
+      bottom: auto;
+      transform: translateY(-10px);
+      left: auto;
+      right: 0;
+      overflow-wrap: break-word; /* Добавлено для переноса длинных слов */
+    }
+
+    /* === НОВЫЙ СТИЛЬ ДЛЯ УМЕНЬШЕНИЯ ШИРИНЫ ПОДСКАЗОК === */
+    .button-with-tooltip .tooltip-content, .input-wrapper .tooltip-content {
+        width: 700px;
+    }
+
+    .tooltip-content p {
+        margin: 0 0 8px 0;
+    }
+    .tooltip-content p:last-child {
+        margin-bottom: 0;
+    }
+    .tooltip-content code {
+        background-color: #4a6fa5;
+        color: #fff;
+        padding: 2px 6px;
+    }
+
+    .tooltip-content::after {
+      content: "";
+      position: absolute;
+      border-width: 8px;
+      border-style: solid;
+      bottom: 100%;
+      top: auto;
+      border-color: transparent transparent #2c3e50 transparent;
+      left: auto;
+      right: 8px;
+    }
+
+    .info-tooltip:hover .tooltip-content {
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 767px) { 
+      .button-group {
+          justify-content: center; 
+      }
+      .generator-group .input-wrapper {
+          flex-direction: column;
+          align-items: stretch;
+      }
+      .tooltip-content {
+        width: 340px; 
+      }
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0.5rem; }
+      h1 { font-size: 1.5em; }
+      h2, summary { font-size: 1.3em; }
+    }
+  </style>
+  <script>
+    // Функция для копирования кода в буфер обмена
+    function copyCode(button) {
+      const preElement = button.closest('.code-block').querySelector('pre');
+      if (preElement) {
+        const textToCopy = preElement.innerText;
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          handleButtonClickFeedback(button, "Копировать", "Скопировано!", "Ошибка!");
+        } catch (err) {
+          console.error('Error copying: ', err);
+          handleButtonClickFeedback(button, "Копировать", "Скопировано!", "Ошибка!", false);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+    }
+
+    // Универсальная функция для отображения обратной связи кнопки
+    function handleButtonClickFeedback(button, originalText, successText, errorText, isSuccess = true) {
+        button.innerText = isSuccess ? successText : errorText;
+        setTimeout(() => {
+            button.innerText = originalText;
+        }, isSuccess ? 1500 : 2000);
+    }
+
+    // Карта соответствия ID поля ввода и строки-плейсхолдера
+    const PLACEHOLDER_MAP = {
+        'ipAddressInput': 'ВАШ_IP_АДРЕС_СЕРВЕРА',
+        'hostNameInput': 'ВАШ_ХОСТНЕЙМ',
+        'rootPasswordInput': 'ВАШ_root_ПАРОЛЬ',
+        'sshKeyFileNameInput': 'id_ed25519',
+        'subdomainInput': 'ВАШ_СУБДОМЕН.duckdns.org',
+        'sshCommentInput': 'ВАШ_КОММЕНТАРИЙ_К_КЛЮЧУ',
+        'acmeEmailInput': 'ВАШ_ACME_EMAIL@example.com',
+        'sshKeyPathInput': 'C:\\Users\\User\\.ssh\\',
+        'marzbanAdminUsernameInput': 'ИМЯ_АДМИНА_MARZBAN', 
+        'marzbanAdminPasswordInput': 'ПАРОЛЬ_АДМИНА_MARZBAN',
+        'shortIdsInput': 'ВАШ_SHORT_IDS',
+        'sshPassphraseInput': 'ВАША_ПАРОЛЬНАЯ_ФРАЗА',
+        'tokenInput': 'ВАШ_ТОКЕН',
+        'localPublicKeyInput': 'ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ',
+        'localPrivateKeyInput': 'ВАШ_ЛОКАЛЬНЫЙ_ЗАКРЫТЫЙ_КЛЮЧ',
+        'privateKeyInput': 'ВАШ_PRIVATE_KEY'
+    };
+
+    const PLACEHOLDERS_TO_REPLACE = Object.values(PLACEHOLDER_MAP)
+        .sort((a, b) => b.length - a.length);
+
+    const originalCodeContents = new Map();
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function applyVariables() {
+        const applyButton = document.getElementById('applyVariablesBtn');
+        try {
+            const currentValues = {};
+            for (const inputId in PLACEHOLDER_MAP) {
+                const inputElement = document.getElementById(inputId);
+                if (inputElement) {
+                    currentValues[inputId] = inputElement.value;
+                    localStorage.setItem(`variable_${inputId}`, inputElement.value);
+                }
+            }
+
+            const currentSshKeyPath = currentValues['sshKeyPathInput'] || PLACEHOLDER_MAP['sshKeyPathInput'];
+            const currentSshKeyFileName = currentValues['sshKeyFileNameInput'] || PLACEHOLDER_MAP['sshKeyFileNameInput'];
+            
+            document.querySelectorAll('pre, code').forEach(element => {
+                let content = originalCodeContents.get(element);
+                if (content === undefined) {
+                    content = element.innerHTML;
+                    originalCodeContents.set(element, content);
+                }
+
+                PLACEHOLDERS_TO_REPLACE.forEach(placeholder => {
+                    const inputId = Object.keys(PLACEHOLDER_MAP).find(key => PLACEHOLDER_MAP[key] === placeholder);
+                    const newValue = currentValues[inputId] || PLACEHOLDER_MAP[inputId];
+                    if (newValue !== placeholder) {
+                        // Для плейсхолдера sshKeyPathInput заменяем одинарные обратные слеши на двойные для корректной работы в PowerShell
+                        const finalValue = (inputId === 'sshKeyPathInput') ? newValue.replace(/\\/g, '\\\\') : newValue;
+                        const regex = new RegExp(escapeRegExp(placeholder), 'g');
+                        content = content.replace(regex, finalValue);
+                    }
+                });
+                
+                // --- УДАЛЕН СПЕЦИАЛЬНЫЙ БЛОК ДЛЯ autoSshGenScript --- 
+                // Общая логика теперь обрабатывает его корректно
+
+                if (element.id === 'manualCopyKeyCommand') {
+                    let updatedCommand = `mkdir -p ~/.ssh && echo "ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`;
+                    const localPublicKeyContent = currentValues['localPublicKeyInput'] || PLACEHOLDER_MAP['localPublicKeyInput'];
+                    updatedCommand = updatedCommand.replace('ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ', localPublicKeyContent);
+                    content = updatedCommand;
+                }
+                
+                if (element.id === 'catPublicKeyCommand') {
+                    content = `Get-Content ${currentSshKeyPath}${currentSshKeyFileName}.pub | Set-Clipboard`;
+                }
+
+                if (element.id === 'sshGenPromptPath') {
+                    content = `${currentSshKeyPath}${currentSshKeyFileName}`;
+                }
+                
+                if (element.id === 'sshGenDefaultFullPath' || element.id === 'sshGenDefaultFullPathRestored' || element.id === 'sshConfigIdentityFile') {
+                     content = `${currentSshKeyPath}${currentSshKeyFileName}`;
+                }
+
+                
+                element.innerHTML = content;
+            });
+            
+            if (applyButton && document.activeElement === applyButton) {
+                 handleButtonClickFeedback(applyButton, "Применить", "Применено!", "Ошибка!", true);
+            }
+        } catch (error) {
+            console.error("Error applying variables:", error);
+            if (applyButton && document.activeElement === applyButton) {
+                handleButtonClickFeedback(applyButton, "Применить", "Применено!", "Ошибка!", false);
+            }
+        }
+    }
+
+    function clearVariables() {
+        const clearButton = document.getElementById('clearVariablesBtn');
+        try {
+            for (const inputId in PLACEHOLDER_MAP) {
+                const inputElement = document.getElementById(inputId);
+                if (inputElement) {
+                    if (inputId === 'sshKeyPathInput' || inputId === 'sshKeyFileNameInput') {
+                        inputElement.value = PLACEHOLDER_MAP[inputId];
+                    } else {
+                        inputElement.value = '';
+                    }
+                }
+                localStorage.removeItem(`variable_${inputId}`);
+            }
+
+            document.querySelectorAll('pre, code').forEach(element => {
+                const originalContent = originalCodeContents.get(element);
+                if (originalContent) {
+                   element.innerHTML = originalContent;
+                }
+            });
+            
+            document.querySelectorAll('textarea.auto-resize').forEach(textarea => {
+                autoResizeTextarea(textarea, true);
+            });
+            
+            applyVariables();
+
+            handleButtonClickFeedback(clearButton, "Очистить", "Очищено!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error clearing variables:", error);
+            handleButtonClickFeedback(clearButton, "Очистить", "Очищено!", "Ошибка!", false);
+        }
+    }
+
+    function exportVariables() {
+        const exportButton = document.getElementById('exportBtn');
+        try {
+            const dataToExport = {};
+            for (const inputId in PLACEHOLDER_MAP) {
+                const inputElement = document.getElementById(inputId);
+                if (inputElement && inputElement.value && inputElement.value !== PLACEHOLDER_MAP[inputId]) {
+                    dataToExport[inputId] = inputElement.value;
+                }
+            }
+
+            const jsonString = JSON.stringify(dataToExport, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+			// Получаем значение из поля hostNameInput
+const hostName = document.getElementById('hostNameInput').value;
+
+// Устанавливаем имя файла. Если поле hostNameInput пустое, используется имя 'data.json'
+a.download = hostName ? `${hostName}.json` : 'data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            handleButtonClickFeedback(exportButton, "Экспорт", "Сохранено!", "Ошибка!", true);
+        } catch (error) {
+            console.error('Error exporting variables:', error);
+            handleButtonClickFeedback(exportButton, "Экспорт", "Сохранено!", "Ошибка!", false);
+        }
+    }
+
+    function generatePassword() {
+        const generatePasswordBtn = document.getElementById('generatePasswordBtn');
+        try {
+            const length = 16;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+            let password = "";
+            for (let i = 0, n = charset.length; i < length; ++i) {
+                password += charset.charAt(Math.floor(Math.random() * n));
+            }
+            document.getElementById("marzbanAdminPasswordInput").value = password;
+            handleButtonClickFeedback(generatePasswordBtn, "Сгенерировать", "Готово!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error generating password:", error);
+            handleButtonClickFeedback(generatePasswordBtn, "Сгенерировать", "Готово!", "Ошибка!", false);
+        }
+    }
+
+    function generateUsername() {
+        const generateUsernameBtn = document.getElementById('generateUsernameBtn');
+        try {
+            const adjectives = ["quick", "brave", "clever", "silent", "agile", "swift", "wise", "bold", "calm", "vivid"];
+            const nouns = ["fox", "eagle", "ghost", "shadow", "blaze", "stone", "river", "peak", "echo", "spirit"];
+            const num = Math.floor(Math.random() * 900) + 100;
+            const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+            const username = `${randomAdjective}${randomNoun}${num}`;
+            document.getElementById("marzbanAdminUsernameInput").value = username;
+            handleButtonClickFeedback(generateUsernameBtn, "Сгенерировать", "Готово!", "Ошибка!", true);
+        } catch (error) {
+            console.error("Error generating username:", error);
+            handleButtonClickFeedback(generateUsernameBtn, "Сгенерировать", "Готово!", "Ошибка!", false);
+        }
+    }
+    
+    function autoResizeTextarea(textarea, isClearing = false) {
+        if(isClearing) {
+            textarea.style.height = 'auto';
+        } else {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('applyVariablesBtn')?.addEventListener('click', applyVariables);
+      document.getElementById('clearVariablesBtn')?.addEventListener('click', clearVariables);
+      document.getElementById('generatePasswordBtn')?.addEventListener('click', generatePassword);
+      document.getElementById('generateUsernameBtn')?.addEventListener('click', generateUsername);
+      document.getElementById('exportBtn')?.addEventListener('click', exportVariables);
+
+      const importButton = document.getElementById('importBtn');
+      const fileInput = document.getElementById('importFileInput');
+
+      if (importButton && fileInput) {
+          importButton.addEventListener('click', () => {
+            fileInput.click();
+          });
+    
+          fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+              return;
+            }
+    
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const data = JSON.parse(e.target.result);
+    
+                for (const key in data) {
+                  const inputElement = document.getElementById(key);
+                  if (inputElement) {
+                    inputElement.value = data[key];
+                  }
+                }
+    
+                applyVariables();
+
+                document.querySelectorAll('textarea.auto-resize').forEach(textarea => {
+                   autoResizeTextarea(textarea);
+                });
+
+                handleButtonClickFeedback(importButton, "Импорт", "Успешно!", "Ошибка!");
+    
+              } catch (error) {
+                console.error('Ошибка при чтении файла:', error);
+                handleButtonClickFeedback(importButton, "Импорт", "Успешно!", "Ошибка!", false);
+              }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = '';
+          });
+      }
+
+      document.querySelectorAll('pre, code').forEach(element => {
+          originalCodeContents.set(element, element.innerHTML);
+      });
+
+      for (const inputId in PLACEHOLDER_MAP) {
+          const inputElement = document.getElementById(inputId);
+          if (inputElement) {
+              const savedValue = localStorage.getItem(`variable_${inputId}`);
+              if (savedValue) {
+                  inputElement.value = savedValue;
+              } else {
+                  if (inputId === 'sshKeyPathInput' || inputId === 'sshKeyFileNameInput') {
+                      inputElement.value = PLACEHOLDER_MAP[inputId];
+                  }
+              }
+          }
+      }
+
+      document.querySelectorAll('textarea.auto-resize').forEach(textarea => {
+          textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+          autoResizeTextarea(textarea); 
+      });
+      
+      document.getElementById('sshKeyPathInput')?.addEventListener('input', applyVariables);
+      document.getElementById('sshKeyFileNameInput')?.addEventListener('input', applyVariables);
+
+      applyVariables();
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1 class="main-title">Руководство по настройке сервера с DuckDNS, SSL</h1> 
+
+    
+    <details class="card" id="section-variables" open> 
+      <summary>Настройка данных для плейсхолдеров</summary> 
+      <div class="section">
+        <p>
+          Введите здесь свои данные (IP, домен, ключи), и они автоматически подставятся в команды ниже. 
+          Это упростит работу и уменьшит риск ошибок. Данные сохраняются в браузере и никуда не отправляются.
+        </p>
+        
+        <div class="three-column-inputs">
+          <div class="input-column">
+            <div class="input-group">
+              <label for="ipAddressInput">IP-адрес сервера:</label>
+              <input type="text" id="ipAddressInput" placeholder="Напр: 45.152.86.23" />
+            </div>
+            <div class="input-group">
+              <label for="hostNameInput">Имя хоста сервера:</label>
+              <input type="text" id="hostNameInput" placeholder="Напр: my-server" />
+            </div>
+            <div class="input-group">
+              <label for="rootPasswordInput">Root-пароль сервера:</label>
+              <input type="password" id="rootPasswordInput" placeholder="Пароль root пользователя" />
+            </div>
+            <div class="input-group">
+              <label for="sshKeyFileNameInput">Имя файла SSH-ключа (без расширения):</label>
+              <input type="text" id="sshKeyFileNameInput" value="id_ed25519" placeholder="Напр: id_ed25519" />
+            </div>
+          </div>
+          <div class="input-column">
+            <div class="input-group">
+              <label for="subdomainInput">Субдомен (DuckDNS):</label>
+              <input type="text" id="subdomainInput" placeholder="Напр: my-awesome-server.duckdns.org" />
+            </div>
+             <div class="input-group">
+              <label for="sshCommentInput">Комментарий (для SSH ключа):</label>
+              <input type="text" id="sshCommentInput" placeholder="Напр: my-server-key" />
+            </div>
+            <div class="input-group">
+              <label for="acmeEmailInput">Email (для установки Acme.sh):</label>
+              <input type="text" id="acmeEmailInput" placeholder="Напр: your.acme-email@example.com" />
+            </div>
+            <div class="input-group">
+              <label for="sshKeyPathInput">Путь к SSH-ключам (локально):</label>
+              <input type="text" id="sshKeyPathInput" value="C:\Users\User\.ssh\" placeholder="Напр: C:\Users\User\.ssh\" />
+            </div>
+          </div>
+          <div class="input-column">
+            <div class="generator-group">
+              <label for="marzbanAdminUsernameInput">Имя админа Marzban:</label>
+              <div class="input-wrapper">
+                <input type="text" id="marzbanAdminUsernameInput" placeholder="Введите или сгенерируйте" />
+                <button id="generateUsernameBtn">Сгенерировать</button>
+                <div class="info-tooltip">
+                  <span class="info-icon">i</span>
+                  <div class="tooltip-content">
+                    <p>Генератор создает случайное имя пользователя, комбинируя прилагательное (например, <code>quick</code>), существительное (<code>fox</code>) и трехзначное число. Код написан на JavaScript.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="generator-group">
+              <label for="marzbanAdminPasswordInput">Пароль админа Marzban:</label>
+              <div class="input-wrapper">
+                <input type="text" id="marzbanAdminPasswordInput" placeholder="Введите или сгенерируйте" />
+                <button id="generatePasswordBtn">Сгенерировать</button>
+                <div class="info-tooltip">
+                  <span class="info-icon">i</span>
+                  <div class="tooltip-content">
+                    <p>Генератор создает случайный 16-значный пароль, используя заглавные и строчные буквы, цифры и специальные символы. Код написан на JavaScript.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="shortIdsInput">Short ID (OpenSSL):</label>
+              <input type="text" id="shortIdsInput" placeholder="Результат команды openssl rand" />
+            </div>
+			<div class="input-group">
+              <label for="sshPassphraseInput">Парольная фраза для SSH-ключа:</label>
+              <input type="password" id="sshPassphraseInput" placeholder="Оставьте пустым или введите фразу" />
+            </div>
+          </div>
+          
+          <div class="two-column-final-inputs">
+            <div class="input-group">
+              <label for="tokenInput">Токен (DuckDNS):</label>
+              <textarea id="tokenInput" class="auto-resize" placeholder="Токен из вашего аккаунта DuckDNS"></textarea>
+            </div>
+            <div class="input-group">
+              <label for="localPublicKeyInput">Локальный ОТКРЫТЫЙ ключ (id_ed25519.pub):</label>
+              <textarea id="localPublicKeyInput" class="auto-resize" placeholder="Вставьте сюда содержимое вашего .pub файла"></textarea>
+            </div>
+            <div class="input-group">
+              <label for="localPrivateKeyInput">Локальный ЗАКРЫТЫЙ ключ (id_ed25519):</label>
+              <textarea id="localPrivateKeyInput" class="auto-resize" placeholder="Вставьте сюда содержимое вашего приватного ключа"></textarea>
+            </div>
+            <div class="input-group">
+              <label for="privateKeyInput">Приватный ключ (Xray x25519):</label>
+              <textarea id="privateKeyInput" class="auto-resize" placeholder="Результат команды xray x25519"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="button-group">
+          <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+          
+          <div class="button-with-tooltip">
+            <button id="importBtn">Импорт</button>
+            <div class="info-tooltip">
+              <span class="info-icon">i</span>
+              <div class="tooltip-content">
+                <p>Загрузить данные из файла <code>data.json</code>. Создайте на компьютере файл в формате JSON, где <code>ключ</code> — это <code>id</code> поля ввода из HTML (например, <code>ipAddressInput</code>), а <code>значение</code> — ваши данные.
+                Пример содержимого файла data.json:<br>
+{<br>
+  "ipAddressInput": "45.152.86.23",<br>
+  "hostNameInput": "my-server",<br>
+  "rootPasswordInput": "S3cureR00tPa$$w0rd!",<br>
+}<br>
+Примечание: Вы можете опустить любые поля. Скрипт заполнит только те, которые найдет в вашем JSON-файле</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="button-with-tooltip">
+            <button id="exportBtn">Экспорт</button>
+            <div class="info-tooltip">
+              <span class="info-icon">i</span>
+              <div class="tooltip-content">
+                <p>Сохранить все текущие данные из полей ввода в файл с именем <code>data.json</code>. Этот файл можно будет использовать позже для импорта.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-with-tooltip">
+            <button id="applyVariablesBtn">Применить</button>
+            <div class="info-tooltip">
+              <span class="info-icon">i</span>
+              <div class="tooltip-content">
+                <p>Подставить введенные в поля данные во все команды на странице. Данные также сохраняются в локальном хранилище вашего браузера для удобства.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-with-tooltip">
+            <button id="clearVariablesBtn">Очистить</button>
+            <div class="info-tooltip">
+              <span class="info-icon">i</span>
+              <div class="tooltip-content">
+                <p>Очистить все поля ввода, удалить сохраненные данные из браузера и сбросить все команды на странице к их первоначальному виду.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    
+    <details class="card" id="section1">
+      <summary>1. Обновление системы</summary>
+      <div class="section">
+        <p class="goal-section"><strong>Цель:</strong> <em class="goal">Установить последние версии пакетов для безопасности и стабильности.</em></p>
+        
+        <details class="card">
+          <summary>1.1. Создание пары ключей формата Ed25519 на локальном компьютере</summary>
+          <div class="section">
+             <p class="goal-section"><strong>Цель:</strong> <em class="goal">Создать безопасную пару SSH-ключей для аутентификации на сервере без использования пароля.</em></p>
+            
+            <details class="card" open>
+                <summary>Способ 1 (Рекомендуемый): Автоматический скрипт PowerShell</summary>
+                <div class="section">
+                    <p>Этот скрипт автоматически сгенерирует SSH-ключ, используя данные из раздела "Настройка плейсхолдеров". Он создаст директорию <code>.ssh</code>, если её нет, проверит, не существует ли уже файл с таким именем, и в конце скопирует ваш новый открытый ключ в буфер обмена.</p>
+                    <div class="action-item">
+                        <div class="action-header">
+                            <label class="action-label">
+                                <input type="checkbox"/>
+                                <strong>Скопируйте и выполните этот скрипт в терминале PowerShell на вашем компьютере:</strong>
+                            </label>
+                        </div>
+                        <div class="code-block bash-script-code">
+                            <pre><code class="language-powershell" id="autoSshGenScript">
+# --- Начальные данные (автоматически заменяются со страницы) ---
+$SshKeyPath = "C:\Users\User\.ssh\"
+$SshKeyFileName = "id_ed25519"
+
+# --- Плейсхолдеры для внутренней логики ---
+$SshComment_Placeholder = 'ВАШ' + '_КОММЕНТАРИЙ_К_КЛЮЧУ'
+$SshPassphrase_Placeholder = 'ВАША' + '_ПАРОЛЬНАЯ_ФРАЗА'
+
+# Эти значения будут заменены JS со страницы.
+$SshComment = "ВАШ_КОММЕНТАРИЙ_К_КЛЮЧУ"
+$SshPassphrase = "ВАША_ПАРОЛЬНАЯ_ФРАЗА"
+
+# --- Логика скрипта (ЭТУ ЧАСТЬ МЕНЯТЬ НЕ НУЖНО) ---
+
+# 1. Определяем переменные
+# Если путь не изменен пользователем, используем стандартный путь.
+$TargetSshDir = if ($SshKeyPath -eq 'C:\Users\User\.ssh\' -or $SshKeyPath -eq "C:\\Users\\User\\.ssh\\") {
+    Join-Path -Path $env:USERPROFILE -ChildPath ".ssh"
+} else {
+    $SshKeyPath
+}
+
+# Если комментарий не изменен (остался плейсхолдер) или пуст, создаем стандартный.
+$KeyComment = if ($SshComment -eq $SshComment_Placeholder -or -not $SshComment.Trim()) {
+    "$env:USERNAME@$env:COMPUTERNAME"
+} else {
+    $SshComment
+}
+
+# 2. Создаем директорию .ssh, если она отсутствует
+if (-not (Test-Path -Path $TargetSshDir)) {
+    try {
+        Write-Host "Создаю директорию: $TargetSshDir" -ForegroundColor Cyan
+        New-Item -Path $TargetSshDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
+        Write-Host "✅ Директория успешно создана." -ForegroundColor Green
+    } catch {
+        Write-Host "❌ ОШИБКА: Не удалось создать директорию. Проверьте права доступа." -ForegroundColor Red
+        Write-Host $_.Exception.Message
+        return # Прерываем выполнение
+    }
+} else {
+    Write-Host "ℹ️  Директория '$TargetSshDir' уже существует." -ForegroundColor Cyan
+}
+
+# 3. Проверяем, существует ли уже файл ключа, чтобы избежать перезаписи
+$PrivateKeyFilePath = Join-Path -Path $TargetSshDir -ChildPath $SshKeyFileName
+if (Test-Path -Path $PrivateKeyFilePath) {
+    Write-Host "⚠️  ВНИМАНИЕ: Файл ключа '$PrivateKeyFilePath' уже существует." -ForegroundColor Yellow
+    Write-Host "   Генерация отменена. Если вы хотите создать новый ключ, удалите старый или укажите другое имя файла." -ForegroundColor Yellow
+    return # Выходим из скрипта
+}
+
+# 4. Генерируем SSH-ключ (ИЗМЕНЕННАЯ ЛОГИКА)
+try {
+    Write-Host "⏳ Генерирую ключ... Пожалуйста, подождите." -ForegroundColor Cyan
+    
+    # Собираем базовую команду
+    $SshKeygenCommand = "ssh-keygen -t ed25519 -f `"$PrivateKeyFilePath`" -C `"$KeyComment`" -q"
+    
+    # Проверяем, нужно ли добавлять парольную фразу.
+    # Проверка срабатывает, если поле не было изменено ИЛИ если оно пустое/содержит пробелы.
+    $usePassphrase = $SshPassphrase -ne $SshPassphrase_Placeholder -and $SshPassphrase.Trim()
+    
+    if ($usePassphrase) {
+        # Если фраза есть, добавляем параметр -N
+        $SshKeygenCommand += " -N `"$SshPassphrase`""
+        Write-Host "   Используется парольная фраза." -ForegroundColor Yellow
+    } else {
+        # Если фразы нет, просто выводим сообщение
+        Write-Host "   Парольная фраза не задана." -ForegroundColor Cyan
+    }
+    
+    # Выполняем собранную команду
+    Invoke-Expression -Command $SshKeygenCommand
+
+    Write-Host "✅ SSH-ключ успешно сгенерирован!" -ForegroundColor Green
+    Write-Host "   -> Закрытый ключ сохранен в: $PrivateKeyFilePath"
+    Write-Host "   -> Открытый ключ сохранен в:  $PrivateKeyFilePath.pub"
+} catch {
+    Write-Host "❌ ОШИБКА: Не удалось сгенерировать ключ. Убедитесь, что OpenSSH-клиент установлен и доступен в PATH." -ForegroundColor Red
+    Write-Host $_.Exception.Message
+    return
+}
+
+# 5. Копируем содержимое ОТКРЫТОГО ключа в буфер обмена
+$PublicKeyFilePath = "$PrivateKeyFilePath.pub"
+if (Test-Path -Path $PublicKeyFilePath) {
+    try {
+        Get-Content -Path $PublicKeyFilePath | Set-Clipboard
+        Write-Host "✅ Отлично! Открытый ключ скопирован в буфер обмена." -ForegroundColor Green
+        Write-Host '   Теперь вставьте его (Ctrl+V) в поле "Локальный ОТКРЫТЫЙ ключ" вверху страницы.' -ForegroundColor White
+    } catch {
+        Write-Host "❌ ОШИБКА: Не удалось скопировать ключ в буфер обмена." -ForegroundColor Red
+        Write-Host "   Пожалуйста, скопируйте содержимое файла '$PublicKeyFilePath' вручную."
+    }
+} else {
+    Write-Host "❌ ОШИБКА: Не найден сгенерированный открытый ключ '$PublicKeyFilePath'." -ForegroundColor Red
+}
+                            </code></pre>
+                            <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                        </div>
+                        <div class="three-note">
+                            <strong>Важно:</strong> После выполнения скрипта, ваш новый <strong>открытый ключ</strong> будет скопирован в буфер обмена. Вставьте его (Ctrl+V) в поле <strong>"Локальный ОТКРЫТЫЙ ключ"</strong> в разделе плейсхолдеров наверху.
+                        </div>
+                    </div>
+                </div>
+            </details>
+            <details class="card">
+                <summary>Способ 2: Ручная генерация</summary>
+                <div class="section">
+                  <div class="action-item">
+                    <div class="action-header">
+                      <label class="action-label">
+                        <input type="checkbox"/>
+                        <strong>1. Выполнить команду генерации</strong>
+                      </label>
+                      <div class="info-tooltip">
+                        <span class="info-icon">i</span>
+                        <div class="tooltip-content">
+                          <p><strong>Команда:</strong> <code>ssh-keygen -t ed25519 -C "ВАШ_КОММЕНТАРИЙ_К_КЛЮЧУ"</code></p>
+                          <p><code>-t ed25519</code> – указывает на использование современного и безопасного алгоритма шифрования Ed25519.</p>
+                          <p><code>-C "..."</code> – добавляет комментарий к ключу, обычно ваш email, для легкой идентификации ключа.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="code-block">
+                      <pre><code class="language-bash">ssh-keygen -t ed25519 -C "ВАШ_КОММЕНТАРИЙ_К_КЛЮЧУ"</code></pre>
+                      <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                    </div>
+                  </div>
+              
+                  <div class="action-item">
+                    <div class="action-header">
+                      <label class="action-label">
+                        <input type="checkbox" disabled/>
+                        <strong>2. В процессе генерации будет предложено указать путь для сохранения ключа</strong>
+                      </label>
+                      <div class="info-tooltip">
+                        <span class="info-icon">i</span>
+                        <div class="tooltip-content">
+                          <p>После выполнения команды вам будет задан вопрос:</p>
+                          <p><code>Enter file in which to save the key (<span id="sshGenPromptPath">...</span>):</code></p>
+                          <p>Вы можете нажать <strong>Enter</strong>, чтобы использовать путь по умолчанию, или ввести свой собственный путь и имя файла.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="code-block">
+                      <pre><code id="sshGenDefaultFullPathRestored">C:\Users\User\.ssh\id_ed25519</code></pre>
+                      <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                    </div>
+                  </div>
+      
+                  <div class="action-item">
+                      <div class="action-header">
+                          <label class="action-label">
+                              <input type="checkbox" disabled/>
+                              <strong>3. Задать и подтвердить парольную фразу (можно пропустить нажав "enter")</strong>
+                          </label>
+                          <div class="info-tooltip">
+                              <span class="info-icon">i</span>
+                              <div class="tooltip-content">
+                                  <p>Система дважды запросит парольную фразу (passphrase). Она обеспечивает дополнительный уровень защиты вашего закрытого ключа. Рекомендуется установить надежную фразу или нажать <strong>Enter</strong> дважды, чтобы пропустить.</p>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="code-block">
+                          <pre><code id="sshPassphraseDisplay">ВАША_ПАРОЛЬНАЯ_ФРАЗА</code></pre>
+                          <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                      </div>
+                  </div>
+                 <div class="action-item">
+                      <div class="action-header">
+                          <label class="action-label">
+                              <input type="checkbox"/>
+                              <strong>4. Cкопировать содержимое файла .pub в терминале PowerShell (для Windows)</strong>
+                          </label>
+                          <div class="info-tooltip">
+                              <span class="info-icon">i</span>
+                              <div class="tooltip-content">
+                                  <p>Чтобы скопировать содержимое файла <code>.pub</code> в терминале PowerShell, вы можете использовать команду <code>Get-Content</code>. После выполнения этой команды, содержимое вашего файла <code>.pub</code> будет скопировано в буфер обмена, и вы сможете вставить его (например, с помощью Ctrl+V) куда угодно.</p>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="code-block">
+                          <pre><code class="language-bash" id="catPublicKeyCommand">Get-Content C:\Users\User\.ssh\id_ed25519.pub | Set-Clipboard</code></pre>
+                          <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                      </div>
+                  </div>
+      
+                  <div class="two-note">
+                    <strong>Результат:</strong> В указанной директории (<code id="sshGenDefaultFullPath">C:\Users\User\.ssh\id_ed25519</code>) созданы два файла:
+                    <ul>
+                        <li><code>[имя_ключа]</code> (закрытый ключ)</li>
+                        <li><code>[имя_ключа].pub</code> (открытый ключ)</li>
+                    </ul>
+                    <p> В п.4 выполнено копирование содержимого открытого ключа в буфер обмена.</p>
+                    <strong> Вставьте содержимое файла <code>.pub</code>, в поле <code>"Локальный ОТКРЫТЫЙ ключ"</code> в разделе плейсхолдеров выше.</strong> 
+                  </div>
+                </div>
+            </details>
+            
+            <details class="card" id="section1-1-config">
+              <summary>1.1.2. (Опционально) Настройка SSH-клиента Windows для нестандартных ключей</summary>
+              <div class="section">
+                <p>Этот шаг необходим, если вы сохранили ключ с <strong>именем, отличным от стандартного</strong> (например, не <code>id_ed25519</code>), или в <strong>нестандартной директории</strong>. SSH-клиент не сможет автоматически найти такой ключ. Чтобы это исправить, нужно указать путь к нему в конфигурационном файле.</p>
+                
+                <div class="action-item">
+                  <div class="action-header">
+                    <label class="action-label">
+                      <input type="checkbox"/>
+                      <strong>Шаг 1: Откройте или создайте файл конфигурации SSH</strong>
+                    </label>
+                    <div class="info-tooltip">
+                      <span class="info-icon">i</span>
+                      <div class="tooltip-content">
+                        <p>Эта команда откроет файл <code>config</code> в Блокноте. Если файла не существует, Блокнот предложит его создать — согласитесь.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="code-block">
+                    <pre><code class="language-powershell">& 'C:\Porta1\PortableApps\Notepad++PortableLegacyWinVista\Notepad++PortableLegacyWinVista.exe' "$env:USERPROFILE\.ssh\config"</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                </div>
+
+                <div class="action-item">
+                  <div class="action-header">
+                    <label class="action-label">
+                      <input type="checkbox"/>
+                      <strong>Шаг 2: Добавьте информацию о вашем ключе в файл</strong>
+                    </label>
+                    <div class="info-tooltip">
+                      <span class="info-icon">i</span>
+                      <div class="tooltip-content">
+                        <p>Скопируйте и вставьте этот текст в открывшийся файл Блокнота. Путь к файлу ключа будет автоматически подставлен из поля "Путь к SSH-ключам" и "Имя файла SSH-ключа".</p>
+                        <p><strong>Важно:</strong> Указывается путь к <strong>закрытому</strong> ключу (файл без расширения <code>.pub</code>).</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="code-block">
+                    <pre><code class="language-bash" style="white-space: pre;">Host *
+    IdentityFile <span id="sshConfigIdentityFile">C:\Users\User\.ssh\id_ed25519</span></code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                  <div class="note">
+                    <strong>Объяснение:</strong>
+                    <ul>
+                      <li><code>Host *</code>: Эта настройка будет применяться ко всем серверам, к которым вы подключаетесь. Вы можете заменить <code>*</code> на IP-адрес вашего сервера (<code>Host ВАШ_IP_АДРЕС_СЕРВЕРА</code>), чтобы правило действовало только для него.</li>
+                      <li><code>IdentityFile</code>: Указывает путь к вашему <strong>закрытому</strong> SSH-ключу.</li>
+                    </ul>
+                     <p>Сохраните файл (Ctrl+S) и закройте Блокнот. Теперь SSH-клиент будет знать, где искать ваш ключ.</p>
+                  </div>
+                </div>
+              </div>
+            </details>
+            
+            <details class="card">
+              <summary>1.1.3. Копирование открытого ключа на сервер</summary>
+              <div class="section">
+                <p>Выберите один из двух способов. Рекомендуется использовать автоматический.</p>
+
+                <div class="action-item">
+                  <div class="action-header">
+                    <label class="action-label">
+                      <input type="checkbox"/>
+                      <strong>Способ 1 (автоматический для Mac и Linux): Использовать <code>ssh-copy-id</code></strong>
+                    </label>
+                    <div class="info-tooltip">
+                      <span class="info-icon">i</span>
+                      <div class="tooltip-content">
+                        <p>Это самый простой и надежный способ. Утилита <code>ssh-copy-id</code> автоматически подключается к серверу, копирует ваш открытый ключ в нужный файл (<code>~/.ssh/authorized_keys</code>) и устанавливает правильные права доступа.</p>
+                        <p>Вам потребуется в последний раз ввести пароль от <code>root</code> пользователя сервера.</p>
+                        <p><strong>Примечание для Windows:</strong> Эта утилита может отсутствовать. Если команда не найдена, используйте способ 2.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="code-block">
+                    <pre><code class="language-bash">ssh-copy-id root@ВАШ_IP_АДРЕС_СЕРВЕРА</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                </div>
+
+                <div class="action-item">
+                  <div class="action-header">
+                    <label class="action-label">
+                      <input type="checkbox"/>
+                      <strong>Способ 2, Шаг 1: Подключитесь к серверу по SSH</strong>
+                    </label>
+                    <div class="info-tooltip">
+                      <span class="info-icon">i</span>
+                      <div class="tooltip-content">
+                        <p>Используйте эту команду в вашем локальном терминале (PowerShell, Terminal и т.д.), чтобы подключиться к серверу. Вам будет предложено ввести пароль.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="code-block">
+                    <pre><code class="language-bash">ssh root@ВАШ_IP_АДРЕС_СЕРВЕРА</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                  <div class="code-block">
+                    <pre><code>ВАШ_root_ПАРОЛЬ</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                </div>
+
+                <div class="action-item">
+                  <div class="action-header">
+                    <label class="action-label">
+                      <input type="checkbox"/>
+                      <strong>Способ 2, Шаг 2: Скопируйте ключ на сервер</strong>
+                    </label>
+                    <div class="info-tooltip">
+                      <span class="info-icon">i</span>
+                      <div class="tooltip-content">
+                        <p>После успешного входа на сервер, выполните эту длинную команду. Она создаст директорию <code>.ssh</code> (если её нет), добавит ваш ключ из плейсхолдера <strong>"Локальный ОТКРЫТЫЙ ключ"</strong> в файл <code>authorized_keys</code> и установит безопасные права доступа.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="code-block">
+                    <pre><code class="language-bash" id="manualCopyKeyCommand">mkdir -p ~/.ssh && echo "ВАШ_ЛОКАЛЬНЫЙ_ОТКРЫТЫЙ_КЛЮЧ" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Копировать</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </details>
+      </div>
+     </div> 
+</body>
+</html>
